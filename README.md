@@ -89,3 +89,9 @@ This will generate a new M3U playlist file according to your specifications, whi
 
 - For URLs with special characters (e.g., "&", "?"), ensure they are correctly quoted in `config.py` to avoid parsing issues.
 - The `Requests` library is used for downloading the playlist, and `IPyTV` for parsing and generating M3U files.
+
+## Contributions
+
+Thank you for your interest in our project. This repository has been established as a static resource and is intended to serve as-is, without further updates or modifications. We appreciate the understanding and support of the community in respecting this decision.
+
+As such, we are not accepting contributions, pull requests, feature requests, or any form of public discussion. The project is provided for informational purposes, and we encourage users to fork the repository if modifications or enhancements are needed for their individual use.
