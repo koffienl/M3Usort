@@ -84,6 +84,52 @@ python M3Usort.py
 This will generate a new M3U playlist file according to your specifications, which can be found at the path specified by the `output` parameter in `config.py`.
 
 
+## Web Server for Serving IPTV Files
+
+The `webserver.py` script is a simple yet secure Flask application designed to serve IPTV playlist files from a specified directory. It requires users to authenticate using `username` and `password` parameters in the URL query string.
+
+### Key Features
+
+- **Secure File Serving:** Serves files from a user-specific directory, preventing unauthorized access.
+- **Authentication:** Requires URL parameters for `username` and `password` to access files, enhancing security.
+- **Logging:** Implements detailed logging of access and errors, including IP address logging for requests.
+
+### Setup and Configuration
+
+1. **Install Flask:** Ensure Flask is installed in your environment. If not, install it using pip:
+
+pip install Flask
+
+
+2. **Configure Base Directory and Port:** Edit the `BASE_DIR` and `PORT_NUMBER` variables in the script to match your desired file serving directory and port number.
+
+3. **Logging Configuration:** Logs are written to `/data/M3Usort/server.log`. The log file rotates after reaching 100,000 bytes, with backups for the last three logs.
+
+4. **Running the Server:** Execute the script with Python to start the server:
+
+python webserver.py
+
+
+The server will run on the specified port and be accessible from any network interface on the host machine.
+
+### Usage
+
+To request a file, the client needs to provide their `username` and `password` as URL query parameters. For example:
+
+http://server-address:8080/path/to/file.m3u?username=user&password=pass
+
+
+If the authentication fails or the file does not exist, the server responds with HTTP status codes `401 Unauthorized` or `404 Not Found`, respectively.
+
+### Security Considerations
+
+- **Path Traversal Protection:** The server uses `secure_filename` to sanitize the requested file paths, preventing path traversal attacks.
+- **Client IP Logging:** For security monitoring, the server logs the IP address of each request, considering possible `X-Forwarded-For` headers.
+
+### Contribution
+
+This tool is part of a static project not seeking contributions. It's provided as-is for users to fork and adapt to their needs.
+
 
 ## Additional Notes
 
