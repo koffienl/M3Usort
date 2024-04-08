@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Select Channel Groups</h2>
+<form method="POST" action="{{ url_for('main_bp.update_target_channels') }}">
+    {% for group in groups %}
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="selected_groups" value="{{ group }}">
+        <label class="form-check-label" for="{{ group }}">{{ group }}</label>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Update Channels</button>
+</form>
+{% endblock %}

@@ -1,0 +1,418 @@
+/* Dark mode specific styles */
+body.dark-mode .list-group-item {
+    background-color: #333; /* Darker background for contrast */
+    color: #fff; /* White text for visibility */
+    border: 1px solid #444; /* Slightly lighter border for definition */
+}
+
+body.dark-mode .list-group-item .drag-handle {
+    color: #aaa; /* Lighter color for the drag handle */
+}
+
+body.dark-mode .list-group-item:hover {
+    background-color: #444; /* Slightly lighter background on hover for feedback */
+}
+
+/* Add this to ensure that during dragging, the item has a distinct style */
+body.dark-mode .list-group-item.dragging {
+    opacity: 0.75; /* Semi-transparent */
+    background-color: #555; /* Different background to indicate dragging */
+    border: 1px dashed #666; /* Dashed border for a "moving" effect */
+}
+
+
+
+
+
+
+
+
+
+
+
+.dashboard-container {
+    /* Light mode styles */
+    background-color: #ffffff;
+    color: #000000;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+/* Assuming dark mode is triggered by adding .dark-mode class to the body */
+body.dark-mode .dashboard-container {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+
+
+
+
+.movie-link {
+    color: black; /* Dark color for light mode */
+    text-decoration: none; /* Removes underline from links */
+}
+
+body.dark-mode .movie-link {
+    color: #fff; /* Light color for dark mode */
+}
+
+/* Optionally, change the color on hover for better user experience */
+.movie-link:hover {
+    color: #ccc; /* Darker color on hover in light mode */
+    dcolor: #5cb85c; /* Darker color on hover in light mode */
+}
+
+body.dark-mode .movie-link:hover {
+    color: #ccc; /* Lighter color on hover in dark mode */
+}
+
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-toggle-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 1rem;
+  /* Adjust as needed */
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  /* Reduced from 60px to 30px */
+  height: 17px;
+  /* Reduced from 34px to 17px */
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 17px;
+  /* Updated for rounded corners, matching new height */
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 13px;
+  /* Adjusted for smaller size */
+  width: 13px;
+  /* Adjusted for smaller size */
+  left: 2px;
+  /* Adjusted for positioning */
+  bottom: 2px;
+  /* Adjusted for positioning */
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+  border-radius: 50%;
+  /* Ensure it's perfectly round */
+}
+
+input:checked+.slider {
+  background-color: #333;
+  /* Darker shade to match the content part */
+}
+
+input:checked+.slider:before {
+  -webkit-transform: translateX(13px);
+  /* Adjusted for new width */
+  -ms-transform: translateX(13px);
+  /* Adjusted for new width */
+  transform: translateX(13px);
+  /* Adjusted for new width */
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+body.dark-mode #woei,
+body.dark-mode #floating-bar,
+body.dark-mode #main {
+  background-color: #121212;
+  */ background-color: #5cb85c;
+  */
+}
+
+#balk {
+  margin-top: 60px;
+}
+
+body.dark-mode #sidebar,
+body.dark-mode #floating-barr {
+  background-color: #242424;
+  color: #ffffff;
+  box-shadow: none !important;
+  /* Ensure no shadow is present */
+  border: none !important;
+  /* Ensure no border is present */
+
+}
+
+body.dark-mode #sidebar a,
+body.dark-mode #sidebar a:hover {
+  color: #a8a8a8;
+}
+
+body.dark-mode #sidebar a:hover {
+  background-color: #3a3a3a;
+}
+
+body.dark-mode .container {
+  background-color: #181818;
+}
+
+body.dark-mode input[type=text],
+body.dark-mode input[type=number],
+body.dark-mode input[type=password],
+body.dark-mode input[type=submit] {
+  background-color: #333333;
+  color: #dddddd;
+  border-color: #444444;
+}
+
+body.dark-mode input[type=submit]:hover {
+  background-color: #555555;
+}
+
+body.dark-mode .flash-message {
+  background-color: #333333;
+  border-left-color: #4cae4c;
+  /* Keep or adjust based on the flash message type */
+}
+
+
+.sidebar-section {
+  padding: 10px 15px;
+  margin: 0;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background-color: #777;
+  margin: 10px 0;
+}
+
+.flash-message.success {
+  color: #5cb85c;
+  /* Green for success messages */
+  font-weight: bold;
+}
+
+.flash-message.danger {
+  color: #d9534f;
+  /* Red for danger/error messages */
+  font-weight: bold;
+}
+
+#flash-messages {
+  color: #5cb85c;
+  padding-top: 60px;
+  /* Adjust the value to match the height of your floating top bar */
+}
+
+.delete-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: red;
+  /* or any color */
+  float: right;
+  /* position it to the right */
+}
+
+.draggable-item:hover .delete-btn {
+  display: block;
+}
+
+.delete-btn {
+  display: none;
+}
+
+.draggable-item {
+  cursor: move;
+  /* Change cursor to indicate moving */
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #f8f9fa;
+  margin-bottom: 5px;
+  /* Space between items */
+  border-radius: 5px;
+  /* Optional: adds rounded corners */
+  display: flex;
+  align-items: center;
+}
+
+.drag-handle {
+  margin-right: 10px;
+  color: #6c757d;
+  /* A shade of gray */
+  user-select: none;
+  /* Prevents text selection */
+}
+
+/* Optional: change the background color on hover to further indicate interactiveness */
+.draggable-item:hover {
+  background-color: #e9ecef;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+#sidebar {
+  background-color: #333;
+  color: white;
+  min-width: 250px;
+  max-width: 250px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+#sidebar a {
+  color: white;
+  text-decoration: none;
+  padding: 15px;
+  display: block;
+}
+
+#sidebar a:hover {
+  background-color: #444;
+}
+
+#floating-bar {
+  background-color: #5cb85c;
+  width: calc(100% - 250px);
+  /* Adjust the width to account for the sidebar */
+  margin-left: 250px;
+  /* Same as the sidebar's width */
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 10px 0;
+  /* box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
+
+  box-shadow: none !important;
+  /* Ensure no shadow is present */
+  border: none !important;
+  /* Ensure no border is present */
+
+}
+
+#content {
+  padding: 20px;
+  flex-grow: 1;
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: auto;
+}
+
+input[type=text],
+input[type=password],
+input[type=number] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit] {
+  background-color: #5cb85c;
+  color: white;
+  padding: 14px 20px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #4cae4c;
+}
+
+.success-message {
+  color: green;
+  margin: 10px 0;
+}
+

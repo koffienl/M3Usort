@@ -1,0 +1,73 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row" style="margin-top: 2rem;">
+        <div class="twelve columns">
+            <h4>Settings</h4>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="row">
+                    <div class="six columns">
+                        <label for="url">{{ form.url.label }}</label>
+                        {{ form.url(class_="u-full-width") }}
+                    </div>
+                    <div class="six columns">
+                        <label for="output">{{ form.output.label }}</label>
+                        {{ form.output(class_="u-full-width") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="six columns">
+                        <label for="maxage">{{ form.maxage.label }}</label>
+                        {{ form.maxage(class_="u-full-width") }}
+                    </div>
+                    <div class="six columns">
+                        <label for="newGroupTitle">{{ form.new_group_title.label }}</label>
+                        {{ form.new_group_title(class_="u-full-width") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="six columns">
+                        <label for="EnableScheduler">{{ form.enable_scheduler.label }}</label>
+                        {{ form.enable_scheduler(class_="u-full-width") }}
+                    </div>
+                    <div class="six columns">
+                        <label for="ScanInterval">{{ form.scan_interval.label }}</label>
+                        {{ form.scan_interval(class_="u-full-width") }}
+                    </div>
+                </div>
+                <hr>
+
+                <div class="row">
+                    <div class="six columns">
+                        <label for="seriesDir">{{ form.series_dir.label }}</label>
+                        {{ form.series_dir(class_="u-full-width") }}
+                    </div>
+                    <div class="six columns">
+                        <label for="OverwriteSeries">{{ form.overwrite_series.label }}</label>
+                        {{ form.overwrite_series(class_="u-full-width") }}
+                    </div>
+                </div>
+                <hr>
+
+                <div class="row">
+                    <div class="six columns">
+                        <label for="moviesDir">{{ form.movies_dir.label }}</label>
+                        {{ form.movies_dir(class_="u-full-width") }}
+                    </div>
+                    <div class="six columns">
+                        <label for="OverwriteMovies">{{ form.overwrite_movies.label }}</label>
+                        {{ form.overwrite_movies(class_="u-full-width") }}
+                    </div>
+                </div>
+
+
+                <input type="submit" name="submit" value="Save" class="button-primary" style="margin-top: 1rem;">
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

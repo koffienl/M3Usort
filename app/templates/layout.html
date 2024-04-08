@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Basic Page Needs -->
+    <meta charset="utf-8">
+    <title>{% block title %}IPTV M3U tool{% endblock %}</title>
+    <meta name="description" content="{% block description %}{% endblock %}">
+    <meta name="author" content="{% block author %}{% endblock %}">
+
+    <!-- Mobile Specific Metas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Fonts -->
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='normalize.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='skeleton-main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='skeleton-dark.css') }}">
+
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='extra.css') }}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    {% include 'nav.html' %}
+    <!-- <div class="container"> -->
+
+
+
+        <!-- Flash Messages -->
+        <div id="flash-messages-container" class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div id="flash-message" class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        </div>
+
+        <!-- Main content -->
+        {% block content %}{% endblock %}
+
+        <!-- Footer -->
+        {% block footer %}{% endblock %}
+    <!-- </div> -->
+
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="modal-text">Are you sure you want to add this movie?</p>
+        <button class="button-primary" id="confirmBtn"  style="margin-right: 10px;">Yes</button>
+        <button id="cancelBtn">No</button>
+    </div>
+</div>
+
+    {% block scripts %}{% endblock %}
+</body>
+    <script src="{{ url_for('static', filename='extra.js') }}"></script>
+</html>

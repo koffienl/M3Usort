@@ -1,0 +1,21 @@
+<!-- rebuild.html -->
+<p>Rebuild process started. Please wait...</p>
+<script>
+function checkRebuildStatus() {
+    fetch("{{ url_for('main_bp.check_rebuild_status') }}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Rebuild completed successfully!');
+                clearInterval(intervalId); // Stop polling
+            } else if (data.status === 'error') {
+                alert('An error occurred during the rebuild.');
+                clearInterval(intervalId);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Poll every 5 seconds
+let intervalId = setInterval(checkRebuildStatus, 5000);
+</script>

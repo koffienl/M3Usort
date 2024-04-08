@@ -1,0 +1,308 @@
+#movies-list {
+    max-height: 30vh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+#series-list {
+    max-height: 30vh; /* Adjust based on preference */
+    overflow-y: auto; /* Enable vertical scrolling */
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+.search-container {
+    margin-bottom: 20px;
+}
+
+/* Modal CSS */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #4a4a4a;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 40%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.delete-btn {
+    margin-left: auto; /* This ensures that the delete button aligns to the right */
+}
+
+
+/* Dark mode specific styles */
+.list-group-item {
+    background-color: #333; /* Darker background for contrast */
+    color: #fff; /* White text for visibility */
+    border: 1px solid #444; /* Slightly lighter border for definition */
+}
+
+.list-group-item .drag-handle {
+    color: #aaa; /* Lighter color for the drag handle */
+}
+
+
+/* Add this to ensure that during dragging, the item has a distinct style */
+ .list-group-item.dragging {
+    opacity: 0.95; /* Semi-transparent */
+    background-color: #555; /* Different background to indicate dragging */
+    border: 1px dashed #666; /* Dashed border for a "moving" effect */
+}
+
+.list-group-item:hover {
+    background-color: #383838; /* Slightly lighter background on hover for feedback */
+}
+
+/* Add this to ensure that during dragging, the item has a distinct style */
+.list-group-item.dragging {
+    opacity: 0.75; /* Semi-transparent */
+    background-color: #555; /* Different background to indicate dragging */
+    border: 1px dashed #666; /* Dashed border for a "moving" effect */
+}
+
+.delete-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: red;
+  /* or any color */
+  float: right;
+  /* position it to the right */
+    text-decoration: none;
+
+}
+
+.draggable-item:hover .delete-btn {
+  display: block;
+    text-decoration: none;
+
+}
+
+.delete-btn {
+  display: none;
+}
+
+.draggable-item {
+  cursor: move;
+  /* Change cursor to indicate moving */
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #626363;
+  margin-bottom: 5px;
+  /* Space between items */
+  border-radius: 5px;
+  /* Optional: adds rounded corners */
+  display: flex;
+  align-items: center;
+}
+
+.drag-handle {
+  margin-right: 10px;
+    color: #aaa; /* Lighter color for the drag handle */
+  /* A shade of gray */
+  user-select: none;
+  /* Prevents text selection */
+}
+
+
+
+
+
+
+.navbar {
+  position: relative;
+    margin: 0 auto;
+    padding: 0 20px;
+    max-width: 960px;
+
+}
+
+.nnavbar {
+padding-top: 80px;
+    width: 80%;
+padding-right: 0px;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    position: static;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.ttt
+{
+    position: fixed;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+    width: 85%;
+
+
+}
+
+
+
+.ccontainer {
+ padding-top: 80px;
+}
+
+/* Adjust body padding so content doesn't hide behind navbar */
+bbody {
+  padding-top: 60px; /* Adjust based on the height of your navbar */
+}
+
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) { /* Adjust this breakpoint as necessary */
+  body {
+    padding-top: 100px; /* Increase padding for smaller screens */
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    height: auto;
+    padding-bottom: 120px; /* Give extra space for the stacked menu items */
+  }
+  
+  body {
+    padding-top: 180px; /* Increase padding for the taller navbar */
+  }
+}
+
+
+.__menu-item:hover {
+    background-color: #333; /* Or any dark color of your choice */
+    color: #fff; /* Change text color to white for better visibility if needed */
+}
+
+.__nav-menu li:hover {
+    background-color: #333; /* Or any dark color of your choice */
+    color: #fff; /* Change text color to white for better visibility if needed */
+}
+
+
+.nfixed-top {
+  position: fixed; /* Fix the position */
+  top: 0; /* Align the navbar to the top */
+  width: 100%; /* Make the navbar extend full width */
+  z-index: 1030; /* Ensure it sits above other content */
+}
+
+/* Optional: Add some padding to the body to prevent content from hiding behind the navbar */
+bbody {
+  padding-top: 60px; /* This value depends on the exact height of your navbar */
+}
+
+
+.flash-message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #fff;
+}
+
+.flash-message.success {
+    background-color: #2ecc71;
+    border-color: #2ecc71;
+}
+
+.flash-message.error {
+    background-color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.flash-message.info {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.flash-message.warning {
+    background-color: #f1c40f;
+    border-color: #f1c40f;
+}
+
+
+/* Add this to your CSS file (e.g., style.css) */
+.navbar-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.navbar-item {
+    float: left;
+}
+
+.navbar-item a, .dropbtn {
+    display: inline-block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+.navbar-item a:hover, .dropdown:hover .dropbtn {
+    background-color: #555;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+/*]f9f9f9 */
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content a:hover {
+    background-color: #999999;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}

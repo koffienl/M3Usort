@@ -1,0 +1,14 @@
+[Unit]
+Description=M3USort server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/data/M3Usort_dev
+ExecStart=/usr/bin/python3 /data/M3Usort_dev/run.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

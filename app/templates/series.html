@@ -1,0 +1,134 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<div class="container" style="margin-top: 2rem;">
+    <div class="row">
+        <div class="twelve columns">
+            <h4>Search and save series</h4>
+
+<!-- Content -->
+<div id="main">
+    <div class="search-container">
+        <input type="text" class="u-full-width" id="search-bar" placeholder="Search series..." onkeyup="searchSeries()">
+    </div>
+    <ul id="series-list">
+        {% for serie in series %}
+        <li><a href="javascript:void(0)" class="movie-link" data-serie-name="{{ serie.name }}" data-serie-id="{{ serie.series_id }}">{{ serie.name }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+
+        </div>
+    </div>
+</div>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="modal-text">Are you sure you want to add this series?</p>
+        <button id="confirmBtn" class="button-primary" style="margin-right: 10px;">Yes</button>
+        <button id="cancelBtn">No</button>
+    </div>
+</div>
+
+<script>
+    // Function to hide flash messages
+    function hideFlashMessagesAfterDelay() {
+        const flashMessages = document.querySelectorAll('.flash-message');
+        flashMessages.forEach(flashMessage => {
+            setTimeout(() => {
+                flashMessage.style.opacity = '0';
+                setTimeout(() => flashMessage.remove(), 600); // Wait for opacity transition, then remove
+            }, 5000); // Hide after 5 seconds (5000ms)
+        });
+    }
+
+
+
+function addSerieToServer(serieName, serieId) {
+    fetch('{{ url_for("main_bp.add_series_to_server") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ serieName, serieId }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data); // Output the response from the server
+
+    var flashMessagesContainer = document.getElementById('flash-messages-container');
+
+
+            // Create and append the client-side flash message
+            var flashMessageDiv = document.createElement('div');
+            flashMessageDiv.textContent = data.message;
+            flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
+            flashMessagesContainer.appendChild(flashMessageDiv);
+
+            // Hide the newly created flash message after delay
+            hideFlashMessagesAfterDelay();
+
+
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById("myModal");
+    const modalText = document.getElementById("modal-text");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const span = document.getElementsByClassName("close")[0];
+    const movieLinks = document.querySelectorAll('.movie-link');
+
+    movieLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            const serieName = this.getAttribute('data-serie-name');
+            const serieId = this.getAttribute('data-serie-id');
+            modalText.innerHTML = `Are you sure you want to add Serie '${serieName}'?`;
+            modal.style.display = "block";
+            
+            confirmBtn.onclick = function() {
+                console.log("Adding serie:", serieName, "ID:", serieId);
+                modal.style.display = "none";
+                addSerieToServer(serieName, serieId);
+                // Call function to handle adding the serie
+            };
+        });
+    });
+
+    cancelBtn.onclick = function() {
+        modal.style.display = "none";
+    };
+
+    span.onclick = function() {
+        modal.style.display = "none";
+    };
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    };
+});
+
+
+
+function searchSeries() {
+    let input = document.getElementById('search-bar').value.toLowerCase();
+    let serieItems = document.querySelectorAll('#series-list li');
+
+    for (let i = 0; i < serieItems.length; i++) {
+        let serieName = serieItems[i].textContent || serieItems[i].innerText;
+        if (serieName.toLowerCase().indexOf(input) > -1) {
+            serieItems[i].style.display = "";
+        } else {
+            serieItems[i].style.display = "none";
+        }
+    }
+}
+</script>
+{% endblock %}

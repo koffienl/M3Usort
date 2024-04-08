@@ -1,0 +1,171 @@
+{% extends 'layout.html' %} {% block content %}
+
+<style>
+  .info-table {
+    width: 100%;
+  }
+
+  .info-table th {
+    width: 25%;
+    text-align: left;
+  }
+
+  .info-table td {
+    width: 75%;
+    text-align: left;
+  }
+  .collapsible-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .hidden {
+    display: none;
+  }
+</style>
+
+<div class="container">
+  <div class="row" style="margin-top: 2rem">
+    <div class="twelve columns">
+      <h4>Dashboard</h4>
+      <div
+        class="collapsible-header"
+        onclick="toggleVisibility('server-info', this)"
+      >
+        <b>Server Information</b> <span>&#9660;</span>
+      </div>
+      <div id="server-info">
+        <table class="info-table">
+          <tr>
+            <th>&nbsp;</th>
+            <td></td>
+          </tr>
+
+          <tr>
+            <th>M3U url:</th>
+            <td>
+              http://{{ internal_ip }}:{{ port_number }}/m3u/{{ output
+              }}?password=your-playlist-password
+            </td>
+          </tr>
+          <tr>
+            <th>Original M3U url:</th>
+            <td>
+              http://{{ internal_ip }}:{{ port_number
+              }}/m3u/original.m3u?password=your-playlist-password
+            </td>
+          </tr>
+          <tr>
+            <th>original.m3u age:</th>
+            <td id="original_m3u_age">{{ original_m3u_age }}</td>
+          </tr>
+          <tr>
+            <th>{{ output }} age:</th>
+            <td id="sorted_m3u_age">{{ sorted_m3u_age }}</td>
+          </tr>
+          <tr>
+            <th>Next M3u download:</th>
+            <td id="next-m3u">{{ next_m3u }}</td>
+          </tr>
+          <tr>
+            <th>Next VOD download:</th>
+            <td id="next-vod">{{ next_vod }}</td>
+          </tr>
+          <tr>
+            <th>Version:</th>
+            <td>{{ version }}</td>
+          </tr>
+          <tr>
+            <th>Uptime:</th>
+            <td id="uptime">{{ uptime }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div
+        class="collapsible-header"
+        onclick="toggleVisibility('account-info', this)"
+      >
+        <b>Account Information</b> <span>&#9660;</span>
+      </div>
+      <div id="account-info">
+        <table class="info-table">
+          <tr>
+            <th>&nbsp;</th>
+            <td></td>
+          </tr>
+          <tr>
+            <th>Status:</th>
+            <td id="status">{{ status }}</td>
+          </tr>
+          <tr>
+            <th>Expiration Date:</th>
+            <td id="exp_date">{{ exp_date }}</td>
+          </tr>
+          <tr>
+            <th>Active Connections:</th>
+            <td id="active_cons">{{ active_cons }}</td>
+          </tr>
+          <tr>
+            <th>Max Connections:</th>
+            <td id="max_connections">{{ max_connections }}</td>
+          </tr>
+          <tr>
+            <th>Trial Account:</th>
+            <td id="is_trial">{{ 'Yes' if is_trial == '1' else 'No' }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    function fetchData() {
+      fetch("/update_home_data")
+        .then((response) => response.json())
+        .then((data) => {
+          document.getElementById("next-m3u").textContent = data.next_m3u;
+          document.getElementById("next-vod").textContent = data.next_vod;
+          document.getElementById("uptime").textContent = data.uptime;
+          document.getElementById("original_m3u_age").textContent = data.original_m3u_age;
+          document.getElementById("sorted_m3u_age").textContent = data.sorted_m3u_age;
+          document.getElementById("status").textContent = data.status;
+          document.getElementById("exp_date").textContent = data.exp_date;
+          document.getElementById("active_cons").textContent = data.active_cons;
+          if (data.is_trial == 0) {
+            document.getElementById("is_trial").textContent = "No";
+          } else if (data.is_trial == 1) {
+            document.getElementById("is_trial").textContent = "yes";
+          }
+          document.getElementById("status").textContent = data.status;
+          document.getElementById("max_connections").textContent = data.max_connections;
+        })
+        .catch((error) => console.error("Error fetching data: ", error));
+    }
+
+    fetchData(); // Fetch immediately on load
+    setInterval(fetchData, 60000);
+  });
+
+  function toggleVisibility(id, header) {
+    var element = document.getElementById(id);
+    var arrow = header.getElementsByTagName("span")[0];
+    if (element.style.display === "none") {
+      element.style.display = "";
+      arrow.innerHTML = "&#9660;"; // Down arrow when expanded
+    } else {
+      element.style.display = "none";
+      arrow.innerHTML = "&#9650;"; // Up arrow when collapsed
+    }
+  }
+
+  // Initialize sections to be open
+  window.onload = function () {
+    document.getElementById("server-info").style.display = "";
+    document.getElementById("account-info").style.display = "";
+  };
+</script>
+{% endblock %}
