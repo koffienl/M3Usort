@@ -1141,6 +1141,17 @@ def startup_delayed():
             if response.status_code == 200:
                 PrintLog("Server is up and running.", "INFO")
 
+                m3u_url = get_config_variable(CONFIG_PATH, 'url')
+                maxage_before_download = int(get_config_variable(CONFIG_PATH, 'maxage_before_download'))
+                original_m3u_path = f'{BASE_DIR}/files/original.m3u'
+                if is_download_needed(original_m3u_path, maxage_before_download):
+                    PrintLog(f"The M3U file is older than {maxage_before_download} hours or does not exist. Downloading now...", "INFO")
+                    download_m3u(m3u_url, original_m3u_path)
+                    PrintLog(f"Downloaded the M3U file to: {original_m3u_path}", "INFO")
+                else:
+                    PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
+                    update_groups_cache()
+
                 # Schedule a task to check for
                 debug = get_config_variable(CONFIG_PATH, 'debug')
                 if debug == "yes":
@@ -1186,6 +1197,7 @@ def startup_instant():
         os.makedirs(files_dir)
         PrintLog(f"Directory {files_dir} created.", "INFO")
 
+    '''
     m3u_url = get_config_variable(CONFIG_PATH, 'url')
     maxage_before_download = int(get_config_variable(CONFIG_PATH, 'maxage_before_download'))
     original_m3u_path = f'{BASE_DIR}/files/original.m3u'
@@ -1196,6 +1208,7 @@ def startup_instant():
     else:
         PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
         update_groups_cache()
+    '''
 
 def PrintLog(string, type):
     if type == "DEBUG":
