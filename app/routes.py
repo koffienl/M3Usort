@@ -263,13 +263,16 @@ import os
 def get_time_diff(file_path):
     current_time = datetime.now()
 
-    file_mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-    time_difference = current_time - file_mod_time
-    hours, remainder = divmod(time_difference.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    formatted_difference = f"{hours:02d}:{minutes:02d}"
+    if os.path.exists(file_path):
+        file_mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+        time_difference = current_time - file_mod_time
+        hours, remainder = divmod(time_difference.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        formatted_difference = f"{hours:02d}:{minutes:02d}"
 
-    return formatted_difference
+        return formatted_difference
+    else:
+        return "not found"
 
 @main_bp.route('/update_home_data')
 def update_home_data():
