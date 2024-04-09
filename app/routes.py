@@ -129,7 +129,7 @@ def update_series_directory(series_dir):
                 PrintLog(f"Updating series: {matching_series['name']}", "INFO")
                 DownloadSeries(matching_series['series_id'])
             else:
-                PrintLog(f"No matching series found for directory: {dir_name}", "INFO")
+                PrintLog(f"No matching series found for directory: {dir_name}", "WARNING")
 
 def update_movies_directory(movies_dir):
     # Retrieve the list of series from the API
@@ -154,8 +154,6 @@ def update_movies_directory(movies_dir):
                 if not os.path.exists(strm_file_path) or overwrite_movies == 1:
                     PrintLog(f"Updating movie: {matching_movie['name']}", "INFO")
                     strm_content = f"{base_url}/movie/{username}/{password}/{matching_movie['stream_id']}.mkv"
-                    PrintLog(strm_file_path, "INFO")
-                    PrintLog(strm_content, "INFO")
                     
                     # Write to .strm file
                     with open(strm_file_path, 'w') as strm_file:
@@ -247,11 +245,14 @@ def login():
         password = request.form['password']
         
         if check_password_hash(hashed_pw_from_config, password):
+            PrintLog('User logged in', 'INFO')
             session['logged_in'] = True
             session.permanent = True  # Make the session permanent so it uses the app's permanent session lifetime
             return redirect(url_for('main_bp.home'))
         else:
             flash('Incorrect password.', 'error')
+            PrintLog('Incorrect admin password', 'ERROR')
+            
 
     return render_template('login.html')
 
@@ -476,8 +477,56 @@ def series():
     series = GetSeriesList()
     return render_template('series.html', series=series)
 
-
 def DownloadSeries(series_id):
+    series_dir = get_config_variable(CONFIG_PATH, 'series_dir')
+    m3u_url = get_config_variable(CONFIG_PATH, 'url')
+    username, password = extract_credentials_from_url(m3u_url)
+    overwrite_series = int(get_config_variable(CONFIG_PATH, 'overwrite_series'))
+
+    if not all([series_dir, m3u_url, username, password, isinstance(overwrite_series, int)]):
+        raise ValueError("Configuration error. Ensure series_dir, m3u_url, username, password, and overwrite_series are set.")
+
+    parsed_url = urlparse(m3u_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    series_info_url = f"{base_url}/player_api.php?username={username}&password={password}&action=get_series_info&series_id={series_id}"
+    response = requests.get(series_info_url)
+    series_info = response.json()
+    series_name = series_info['info']['name']
+
+    try:
+        # Attempt to process the standard episodes format
+        for season in series_info['episodes']:
+            for episode in series_info['episodes'][season]:
+                process_episode(episode, series_name, base_url, username, password, series_dir, overwrite_series)
+    except TypeError:
+        # If TypeError encountered, attempt to process the alternate episodes format
+        try:
+            for season_episodes in series_info['episodes']:
+                for episode in season_episodes:
+                    process_episode(episode, series_name, base_url, username, password, series_dir, overwrite_series)
+        except Exception as alternate_format_error:
+            PrintLog(f"Error processing alternate episodes format for series '{series_name}' with ID {series_id}: {alternate_format_error}", "WARNING")
+
+def process_episode(episode, series_name, base_url, username, password, series_dir, overwrite_series):
+    try:
+        episode_id = episode['id']
+        episode_num = str(episode['episode_num']).zfill(2)
+        season_num = str(episode.get('season', '1')).zfill(2)  # Default season to '1' if not present
+        strm_file_name = f"{series_name} S{season_num}E{episode_num}.strm"
+        strm_content = f"{base_url}/series/{username}/{password}/{episode_id}.mkv"
+
+        series_dir_path = os.path.join(series_dir, series_name)
+        os.makedirs(series_dir_path, exist_ok=True)
+        strm_file_path = os.path.join(series_dir_path, strm_file_name)
+
+        if not os.path.exists(strm_file_path) or overwrite_series == 1:
+            PrintLog(f"Adding new file: {strm_file_path}", "INFO")
+            with open(strm_file_path, 'w') as strm_file:
+                strm_file.write(strm_content)
+    except Exception as episode_error:
+        PrintLog(f"Error processing episode '{episode['title']}' for series '{series_name}': {episode_error}", "ERROR")
+
+def DownloadSeriesORG(series_id):
     series_dir = get_config_variable(CONFIG_PATH, 'series_dir')
     m3u_url = get_config_variable(CONFIG_PATH, 'url')
     username, password = extract_credentials_from_url(m3u_url)
@@ -497,10 +546,13 @@ def DownloadSeries(series_id):
     # Extract series name
     series_name = series_info['info']['name']
 
+    PrintLog(f"series_info['episodes']: {series_info['episodes']}", "WARNING")
+
     # Process each episode
     for season in series_info['episodes']:
         try:
             for episode in series_info['episodes'][season]:
+                PrintLog(episode, "ERROR")
                 episode_id = episode['id']
                 episode_num = str(episode['episode_num']).zfill(2)
                 season_num = str(episode['season']).zfill(2)
@@ -519,8 +571,8 @@ def DownloadSeries(series_id):
                     PrintLog(f"Adding new file: {strm_file_path}", "INFO")
                     with open(strm_file_path, 'w') as strm_file:
                         strm_file.write(strm_content)
-                #else:
-                    #print(f"Skipping existing file without overwrite: {strm_file_path}")
+                    #else:
+                        #print(f"Skipping existing file without overwrite: {strm_file_path}")
         except Exception as inner_error:
             PrintLog(f"Error processing episodes for series '{series_name}' with ID {series_id}: {inner_error}", "WARNING")
 
@@ -533,6 +585,16 @@ def add_series_to_server():
     return jsonify(message="Series added successfully"), 200
 
 @main_bp.route('/rebuild')
+def rebuildWeb():
+    rebuild()
+    # Redirect back to the referrer page, or to a default page if no referrer is set
+    referrer = request.referrer
+    if referrer:
+        return redirect(referrer)
+    else:
+        # Redirect to a default route if the referrer is not found
+        return redirect(url_for('main_bp.home'))
+
 def rebuild():
     original_m3u_path = f'{BASE_DIR}/files/original.m3u'
     output = get_config_variable(CONFIG_PATH, 'output')
@@ -574,14 +636,6 @@ def rebuild():
         content = new_playlist.to_m3u_plus_playlist()
         file.write(content)
     PrintLog(f'Exported the filtered and curated playlist to {output_path}', "INFO")
-
-    # Redirect back to the referrer page, or to a default page if no referrer is set
-    referrer = request.referrer
-    if referrer:
-        return redirect(referrer)
-    else:
-        # Redirect to a default route if the referrer is not found
-        return redirect(url_for('main_bp.home'))
 
 @main_bp.route('/download')
 def download():
