@@ -31,7 +31,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.6 Dev'
+VERSION = '0.1.7 Dev'
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
 CACHE_DURATION = 3600  # Duration in seconds (e.g., 300 seconds = 5 minutes)
 
