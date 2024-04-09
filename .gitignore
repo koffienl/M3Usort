@@ -4,6 +4,8 @@ commit.sh
 M3Usort.log
 M3Usort.log.*
 
+.vscode
+
 
 # Byte-compiled / optimized / DLL files
 **/__pycache__
