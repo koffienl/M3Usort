@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.9
+- When adding a setting not present in the current config, it is added to the config
+
 ## 0.1.8
 - BREAKING: Please `run pip install packaging` before installing this version
 - updated README

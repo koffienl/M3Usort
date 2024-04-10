@@ -33,7 +33,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.8'
+VERSION = '0.1.9'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -186,6 +186,7 @@ def get_config_variable(config_path, variable_name):
     return config_variable
 
 def update_config_variable(config_path, variable_name, new_value):
+    variable_found = False
     with open(config_path, 'r') as file:
         lines = file.readlines()
 
@@ -193,8 +194,12 @@ def update_config_variable(config_path, variable_name, new_value):
         for line in lines:
             if line.strip().startswith(f'{variable_name} ='):
                 file.write(f'{variable_name} = "{new_value}"\n')
+                variable_found = True
             else:
                 file.write(line)
+
+        if not variable_found:
+            file.write(f'{variable_name} = "{new_value}"\n')
 
 def update_config_array(config_path, array_name, new_value):
     # Rewrite the configuration file with the updated group order
