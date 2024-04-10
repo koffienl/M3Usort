@@ -20,6 +20,8 @@ import secrets
 import socket
 from time import sleep
 import logging
+from packaging import version
+
 logging.getLogger('ipytv').setLevel(logging.WARNING)
 
 
@@ -31,7 +33,9 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.7 Dev'
+VERSION = '0.1.8'
+UPDATE_AVAILABLE = 0
+UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
 CACHE_DURATION = 3600  # Duration in seconds (e.g., 300 seconds = 5 minutes)
 
@@ -39,6 +43,7 @@ CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_PATH = os.path.join(CURRENT_DIR, '..', 'config.py')
 CONFIG_PATH = os.path.normpath(CONFIG_PATH)
 BASE_DIR = os.path.dirname(CONFIG_PATH)
+
 
 #@app.route('/restart', methods=['POST'])
 @app.route('/restart', methods=['GET', 'POST'])
@@ -87,6 +92,10 @@ def scheduled_renew_m3u():
     else:
         PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
         rebuild()
+
+    check_for_app_updates()
+    if UPDATE_AVAILABLE == 1:
+        PrintLog(f"Update available!", "WARNING")
 
 def download_m3u(url, output_path):
     response = requests.get(url)
@@ -332,8 +341,15 @@ def update_home_data():
         port_number = get_config_variable(CONFIG_PATH, 'port_number')
         output = get_config_variable(CONFIG_PATH, 'output')
 
+        if UPDATE_AVAILABLE == 1:
+            version = f"{VERSION} - Please update to {UPDATE_VERSION}"
+        else:
+            version = VERSION
+
         data = {
+            "update_available": UPDATE_AVAILABLE,
             "next_m3u": next_m3u,
+            "version": version,
             "next_vod": next_vod,
             "original_m3u_age": original_m3u_age,
             "sorted_m3u_age": sorted_m3u_age,
@@ -410,8 +426,14 @@ def home():
         port_number = get_config_variable(CONFIG_PATH, 'port_number')
         output = get_config_variable(CONFIG_PATH, 'output')
 
+        if UPDATE_AVAILABLE == 1:
+            version = f"{VERSION} - Please update to {UPDATE_VERSION}"
+        else:
+            version = VERSION
 
-        return render_template('home.html',version=VERSION, 
+        return render_template('home.html',
+                               version=version, 
+                               update_available=UPDATE_AVAILABLE, 
                                next_m3u=next_m3u,
                                next_vod=next_vod,
                                original_m3u_age=original_m3u_age,
@@ -860,6 +882,7 @@ def settings():
         update_config_variable(CONFIG_PATH, 'scan_interval', form.scan_interval.data)
         update_config_variable(CONFIG_PATH, 'overwrite_series', form.overwrite_series.data)
         update_config_variable(CONFIG_PATH, 'overwrite_movies', form.overwrite_movies.data)
+        update_config_variable(CONFIG_PATH, 'hide_webserver_logs', form.hide_webserver_logs.data)
 
         job = scheduler.get_job('VOD scheduler')
         if form.enable_scheduler.data == "0":
@@ -893,6 +916,7 @@ def settings():
         form.scan_interval.data = get_config_variable(CONFIG_PATH, 'scan_interval')
         form.overwrite_series.data = get_config_variable(CONFIG_PATH, 'overwrite_series')
         form.overwrite_movies.data = get_config_variable(CONFIG_PATH, 'overwrite_movies')
+        form.hide_webserver_logs.data = get_config_variable(CONFIG_PATH, 'hide_webserver_logs')
 
     return render_template('settings.html', form=form)
 
@@ -1110,6 +1134,7 @@ def ansi_to_html_converter(text):
 
 @main_bp.route('/log')
 def log():
+    hide_webserver_logs = get_config_variable(CONFIG_PATH, 'hide_webserver_logs')
     page = request.args.get('page', 1, type=int)
     lines_per_page = 75
     start_line = (page - 1) * lines_per_page
@@ -1117,16 +1142,44 @@ def log():
 
     log_entries = []  # Will store tuples of (metadata, message, css_class)
 
+
     try:
+        log_lines = ""
         with open(log_file, 'r') as file:
             log_lines = file.readlines()
+
         total_pages = len(log_lines) // lines_per_page + (1 if len(log_lines) % lines_per_page > 0 else 0)
         log_content = log_lines[-(start_line + lines_per_page):len(log_lines) - start_line][::-1]
     except Exception as e:
         log_content = [f"Error reading log file: {e}"]
         total_pages = 1
 
+    '''
+    try:
+        with open(log_file, 'r') as file:
+            log_lines = file.readlines()
+        total_pages = len(log_lines) // lines_per_page + (1 if len(log_lines) % lines_per_page > 0 else 0)
+        # Reverse the lines to start from the latest log entry
+        log_lines = log_lines[::-1]
+        filtered_lines = []
+        for line in log_lines:
+            if hide_webserver_logs == "1" and ('GET /' in line or 'POST /' in line):
+                continue  # Skip webserver access logs if the setting is enabled
+            filtered_lines.append(line)
+            if len(filtered_lines) == lines_per_page:  # Only keep up to the page limit
+                break
+        # Reverse the filtered_lines to have the most recent log entries first
+        #filtered_lines = filtered_lines[::-1]
+        log_content = filtered_lines[-(start_line + lines_per_page):len(filtered_lines) - start_line]
+    except Exception as e:
+        log_content = [f"Error reading log file: {e}"]
+        total_pages = 1
+    '''         
+
+
     for line in log_content:
+        if hide_webserver_logs == "1" and ('GET /' in line or 'POST /' in line):
+            continue
         parts = line.split(' ', 3)  # Split at the third space character
         if len(parts) >= 4:
             metadata, message = parts[0] + ' ' + parts[1] + ' ' + parts[2], parts[3]
@@ -1251,6 +1304,10 @@ def startup_instant():
         os.makedirs(files_dir)
         PrintLog(f"Directory {files_dir} created.", "INFO")
 
+    check_for_app_updates()
+    if UPDATE_AVAILABLE == 1:
+        PrintLog(f"Update available!", "WARNING")
+
     '''
     m3u_url = get_config_variable(CONFIG_PATH, 'url')
     maxage_before_download = int(get_config_variable(CONFIG_PATH, 'maxage_before_download'))
@@ -1265,6 +1322,14 @@ def startup_instant():
     '''
 
 def PrintLog(string, type):
+    '''
+    log_file = f'{BASE_DIR}/logs/M3Usort.log'
+
+    if not os.path.exists(log_file):
+        with open(log_file, 'w') as f:
+            f.write('')  # Create the file by writing an empty string
+    '''
+
     if type == "DEBUG":
         logging.debug(string)
     elif type == "INFO":
@@ -1324,6 +1389,41 @@ def update_groups_cache():
     GROUPS_CACHE['last_updated'] = datetime.now()
 
     PrintLog("End building the cache", "INFO") 
+
+
+import requests
+import re
+from packaging import version
+
+def check_for_app_updates():
+    global UPDATE_AVAILABLE
+    global UPDATE_VERSION
+    try:
+        # Fetch the changelog content from GitHub
+        url = "https://raw.githubusercontent.com/koffienl/M3Usort/main/CHANGELOG.md"
+        response = requests.get(url)
+        if response.status_code != 200:
+            print("Failed to fetch the changelog.")
+            return
+        
+        changelog_content = response.text
+        # Extract version numbers from the changelog content
+        version_pattern = r"## (\d+\.\d+\.\d+)"
+        matches = re.findall(version_pattern, changelog_content)
+        
+        if not matches:
+            print("No version found in changelog.")
+            return
+        
+        # Assume the first match is the most recent version
+        latest_version = matches[0]
+        if version.parse(latest_version) > version.parse(VERSION):
+            UPDATE_AVAILABLE = 1
+            UPDATE_VERSION = latest_version
+    
+    except Exception as e:
+        print(f"Error checking for updates: {e}")
+
 
 ###################################################
 # Emulate functions

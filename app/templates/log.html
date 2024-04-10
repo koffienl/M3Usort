@@ -79,6 +79,20 @@
             {% endfor %}
 
             </div>
+
+            <nav aria-label="Page navigation" style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <div>
+                    {% if current_page > 1 %}
+                        <a href="?page={{ current_page - 1 }}" class="page-link">< Previous</a>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if current_page < total_pages %}
+                        <a href="?page={{ current_page + 1 }}" class="page-link">Next ></a>
+                    {% endif %}
+                </div>
+            </nav>
+
             </div>
 
 

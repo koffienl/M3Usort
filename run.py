@@ -16,14 +16,13 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 config_file = f'{current_dir}/config.py'
 sample_config_file = f'{current_dir}/config.sample'
 
-
 def setup_logging():
-    log_dir = f'{current_dir}/logs'
-    log_file = f'{current_dir}/logs/M3Usort.log'
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    log_dir = os.path.join(current_dir, 'logs')
+    log_file = os.path.join(log_dir, 'M3Usort.log')
 
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    #log_file_path = os.path.join(log_directory, 'app.log')
 
     handler = RotatingFileHandler(log_file, maxBytes=10000000, backupCount=5)
     logging.basicConfig(level=logging.INFO,

@@ -6,8 +6,8 @@ After=network.target
 Type=simple
 User=root
 Group=root
-WorkingDirectory=/data/M3Usort_dev
-ExecStart=/usr/bin/python3 /data/M3Usort_dev/run.py
+WorkingDirectory=/root/M3Usort
+ExecStart=/usr/bin/python3 /root/M3Usort/run.py
 Restart=on-failure
 
 [Install]

@@ -74,7 +74,11 @@
           </tr>
           <tr>
             <th>Version:</th>
-            <td>{{ version }}</td>
+            {% if update_available %}
+              <td id="version"><span style="color: #15ff00;">{{ version }}</span></td>
+            {% else %}
+              <td id="version">{{ version }}</td>
+            {% endif %}
           </tr>
           <tr>
             <th>Uptime:</th>
@@ -142,6 +146,12 @@
           }
           document.getElementById("status").textContent = data.status;
           document.getElementById("max_connections").textContent = data.max_connections;
+
+          if (data.update_available == 0) {
+            document.getElementById("version").textContent = data.version;
+          } else if (data.update_available == 1) {
+            document.getElementById("version").innerHTML = `<span style="color: #15ff00;">${data.version}</span>`;
+          }
         })
         .catch((error) => console.error("Error fetching data: ", error));
     }

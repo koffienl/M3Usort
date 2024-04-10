@@ -7,13 +7,14 @@ movies_dir = "/data/fake/Movies"
 series_dir = "/data/fake/Series"
 admin_password = "scrypt:32768:8:1$FO1enVGidGyUKK8E$c31a80aea1159394255c8b6bf88ca5d41b9e139f5cfceedb55993dd25b78af6375e3d27a3b68f33428f9d3f9cefd143eb588a5039be16fcf0d770e21235469c6"
 playlist_password = "scrypt:32768:8:1$gA9FKkjDaNKmBl9k$bc543d98452e1b4354df8d6b0f1e6c7bcde6c3e0f03f4739e3144e800802b8affe42e74671bc9d9fa1eb38320c3193e99abcb4cb32cfd82c243a20a5a32575f7"
-port_number = "5051"
+port_number = "5050"
 enable_scheduler = "1"
 overwrite_series = "0"
 overwrite_movies = "0"
 scan_interval = "10"
 SECRET_KEY = "ChangeMe!"
 debug = "no"
+hide_webserver_logs = "1"
 
 
 # List of channel groups to whitelist

@@ -12,6 +12,7 @@ class ConfigForm(FlaskForm):
     scan_interval = IntegerField('VOD Schedule Interval (hours)', validators=[DataRequired(), NumberRange(min=1, max=24)])
     enable_scheduler = SelectField('Enable VOD scheduler', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
     overwrite_series = SelectField('Overwrite existing episodes', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
-    overwrite_movies = SelectField('Overwrite existing movies', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
+    overwrite_movies = SelectField ('Overwrite existing movies', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
+    hide_webserver_logs = SelectField('Hide webserver logs', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
     submit = SubmitField('Save')
 
