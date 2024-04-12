@@ -18,10 +18,9 @@ python3 run.py
 optional for running as a service:
 ```bash
 nano M3USort.service
-    # Edit the file according to the correct path (in this example, it would be /root/M3USort) and save
-cp M3USort.service /etc/systemd/system/M3USort.service
-systemctl enable M3USort && systemctl start M3USort
-systemctl start M3USort.service
+    # Edit the file according to the correct path (in this example, it would be /root/M3Usort) and save
+cp M3Usort.service /etc/systemd/system/M3Usort.service
+systemctl enable M3Usort && systemctl start M3Usort
 ```
 ## All the menu items
 

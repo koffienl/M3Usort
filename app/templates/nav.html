@@ -15,6 +15,8 @@
           <a href="{{ url_for('main_bp.log') }}">Log</a>
           {% if RUNNING_AS_SERVICE %}
             <a href="javascript:void(0)" id="restart-link" class="restart-link">Restart server</a>
+          {% endif %}
+          {% if RUNNING_AS_SERVICE and UPDATE_AVAILABLE %}
             <a href="javascript:void(0)" id="update-link" class="update-link">Update</a>
           {% endif %}
         </div>

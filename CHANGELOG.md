@@ -1,6 +1,10 @@
 # Changelog
 
 ## 0.1.12
+- Only offer update in menu when there is an update
+- Small fix in readme about the service
+
+## 0.1.12
 - Added detecting if running as a service to make the restart link dynamic
 - Added a simple update routine (only usable when running as serice)
 

@@ -33,7 +33,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.12'
+VERSION = '0.1.13'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -70,7 +70,7 @@ PLAYLIST_LAST_ATTEMPT_TIME = None
 
 @app.context_processor
 def inject_globals():
-    return dict(RUNNING_AS_SERVICE=RUNNING_AS_SERVICE)
+    return dict(RUNNING_AS_SERVICE=RUNNING_AS_SERVICE, UPDATE_AVAILABLE=UPDATE_AVAILABLE)
 
 @app.route('/restart', methods=['GET', 'POST'])
 def restart():
