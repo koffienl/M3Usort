@@ -44,6 +44,8 @@ CONFIG_PATH = os.path.join(CURRENT_DIR, '..', 'config.py')
 CONFIG_PATH = os.path.normpath(CONFIG_PATH)
 BASE_DIR = os.path.dirname(CONFIG_PATH)
 
+RUNNING_AS_SERVICE = 0
+
 # Global security settings
 MUST_CHANGE_PW = 0
 LOCKOUT_TIMEFRAME = timedelta(minutes=30)
@@ -63,15 +65,26 @@ PLAYLIST_LAST_ATTEMPT_TIME = None
 
 
 
+
+
+
+@app.context_processor
+def inject_globals():
+    return dict(RUNNING_AS_SERVICE=RUNNING_AS_SERVICE)
+
 @app.route('/restart', methods=['GET', 'POST'])
-def restart_service():
+def restart():
+    #if request.method == 'POST':
     try:
         subprocess.run(['systemctl', 'restart', 'M3Usort.service'], check=True)
-        return redirect(url_for('index'))
+        #return redirect(url_for('index'))
+        return "OK"
     except subprocess.CalledProcessError as e:
         # Handle error here
         PrintLog(f"Error restarting service: {e}", "ERROR")
         return "Error restarting the service", 500
+    #else:
+    #    return "Not supported", 500
 
 @app.route('/healthcheck')
 def healthcheck():
@@ -1441,6 +1454,7 @@ def startup_instant():
     if check_password_hash(hashed_admin_pw_from_config, "IPTV") or check_password_hash(hashed_playlist_pw_from_config, "IPTV"):
         MUST_CHANGE_PW = 1
 
+    running_as_service()
 
 def PrintLog(string, type):
     if type == "DEBUG":
@@ -1557,6 +1571,44 @@ def check_playlist_locked():
         reset_playlist_login_attempts()
     return PLAYLIST_LOCKED
 
+@app.route('/update', methods=['GET', 'POST'])
+def update():
+    if request.method == 'POST':
+        # Ensure that base_dir is the path where your git repository is located
+        try:
+            # Change the current working directory to BASE_DIR
+            os.chdir(BASE_DIR)
+            # Execute the git pull command
+            result = subprocess.run(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Check if the git pull was successful
+            if result.returncode == 0:
+                print("Git pull executed successfully.")
+                print(result.stdout.decode('utf-8'))
+                restart()
+            else:
+                print("Git pull failed.")
+                print(result.stderr.decode('utf-8'))
+        except Exception as e:
+            print(f"Failed to execute git pull: {e}")
+    else:
+        return "Not supported", 500
+
+def running_as_service():
+    service_name = "M3Usort.service"
+    global RUNNING_AS_SERVICE
+    try:
+        result = subprocess.run(['systemctl', 'is-active', service_name],
+                                stdout=subprocess.PIPE, 
+                                stderr=subprocess.PIPE,
+                                check=False)  # Use check=False to avoid raising an exception on non-zero exit codes
+        # Set RUNNING_AS_SERVICE based on the command output
+        if result.stdout.decode('utf-8').strip() == 'active':
+            RUNNING_AS_SERVICE = 1
+        else:
+            RUNNING_AS_SERVICE = 0
+    except subprocess.SubprocessError as e:
+        print(f"Failed to check service status: {e}")
+        RUNNING_AS_SERVICE = 0
 
 ###################################################
 # Emulate functions

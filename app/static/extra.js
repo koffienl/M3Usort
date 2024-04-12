@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelBtn = document.getElementById("cancelBtn");
     const span = document.getElementsByClassName("close")[0];
     const restartlink = document.querySelectorAll('.restart-link');
+    const updatelink = document.querySelectorAll('.update-link');
 
     restartlink.forEach(link => {
         link.addEventListener('click', function() {
@@ -102,12 +103,46 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: {
                     }
                 })
+                // Call function to handle adding the movie
+            };
+        });
+    });
+
+
+    updatelink.forEach(link => {
+        link.addEventListener('click', function() {
+            modalText.innerHTML = `Are you sure you want to update the server?`;
+            modal.style.display = "block";
+            
+            confirmBtn.onclick = function() {
+
+                var flashMessagesContainer = document.getElementById('flash-messages-container');
+
+
+                // Create and append the client-side flash message
+                var flashMessageDiv = document.createElement('div');
+                flashMessageDiv.textContent = "Updating server ...";
+                flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
+                flashMessagesContainer.appendChild(flashMessageDiv);
+    
+                // Hide the newly created flash message after delay
+                hideFlashMessagesAfterDelay();
+
+
+                console.log("Updating ...");
+                modal.style.display = "none";
+                fetch('/update', {
+                    method: 'POST',
+                    headers: {
+                    }
+                })
             
 
                 // Call function to handle adding the movie
             };
         });
     });
+
 
     cancelBtn.onclick = function() {
         modal.style.display = "none";
