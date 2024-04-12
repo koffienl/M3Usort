@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.10
+- Added warning when using default password
+- Added lockout of passwords after to many attempts
+- Added link to the changelog on the update message
+- Added possibility to display static warnings
+- Added fix to get the client's real IP address
+- Change the output for log viewing to get better results when hiding webserver logs
+
 ## 0.1.9
 - When adding a setting not present in the current config, it is added to the config
 
@@ -9,7 +17,7 @@
 - small change in service file
 - small change in config.sample
 - added extra pagination to bottom of log page
-- added option to filter out webser calls while viewing the log
+- added option to filter out webserver calls while viewing the log
 - removed 'Dev' from version numbering
 
 ## 0.1.7 Dev

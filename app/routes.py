@@ -24,7 +24,7 @@ from packaging import version
 
 logging.getLogger('ipytv').setLevel(logging.WARNING)
 
-
+main_bp = Blueprint('main_bp', __name__)
 
 # Initialize and configure APScheduler
 scheduler = APScheduler()
@@ -33,7 +33,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.9'
+VERSION = '0.1.10'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -44,8 +44,25 @@ CONFIG_PATH = os.path.join(CURRENT_DIR, '..', 'config.py')
 CONFIG_PATH = os.path.normpath(CONFIG_PATH)
 BASE_DIR = os.path.dirname(CONFIG_PATH)
 
+# Global security settings
+MUST_CHANGE_PW = 0
+LOCKOUT_TIMEFRAME = timedelta(minutes=30)
+MAX_ATTEMPTS = 5
 
-#@app.route('/restart', methods=['POST'])
+# Admin security settings
+ADMIN_WRONG_PW_COUNTER = 0
+ADMIN_LOCKED = 0
+ADMIN_FAILED_LOGIN_ATTEMPTS = 0
+ADMIN_LAST_ATTEMPT_TIME = None
+
+# Playlist security settings
+PLAYLIST_WRONG_PW_COUNTER = 0
+PLAYLIST_LOCKED = 0
+PLAYLIST_FAILED_LOGIN_ATTEMPTS = 0
+PLAYLIST_LAST_ATTEMPT_TIME = None
+
+
+
 @app.route('/restart', methods=['GET', 'POST'])
 def restart_service():
     try:
@@ -73,6 +90,10 @@ def get_internal_ip():
         PrintLog(f"Error obtaining internal IP address: {e}", "ERROR")
         return None
 
+def scheduled_system_tasks():
+    check_for_app_updates()
+
+
 def scheduled_vod_download():
     series_dir = get_config_variable(CONFIG_PATH, 'series_dir')
     update_series_directory(series_dir)
@@ -92,10 +113,6 @@ def scheduled_renew_m3u():
     else:
         PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
         rebuild()
-
-    check_for_app_updates()
-    if UPDATE_AVAILABLE == 1:
-        PrintLog(f"Update available!", "WARNING")
 
 def download_m3u(url, output_path):
     response = requests.get(url)
@@ -229,7 +246,7 @@ def extract_credentials_from_url(m3u_url):
         return match.groups()
     return None, None
 
-main_bp = Blueprint('main_bp', __name__)
+
 
 @app.before_request
 def require_auth():
@@ -249,25 +266,34 @@ def require_auth():
     # Check if user is logged in
     if not session.get('logged_in') and request.endpoint not in ['login', 'static']:
         return redirect(url_for('login'))
+    
+    if not request.path.startswith('/static') and not request.path.startswith('/update_home_data') and not request.method == 'POST' and not request.path.startswith('/login'):
+        if MUST_CHANGE_PW == 1:
+            flash("You are using a default password, please change immediately!", "static")
+    
+    if not request.path.startswith('/static') and not request.path.startswith('/update_home_data') and not request.method == 'POST':
+        if check_admin_locked():
+            flash(f"Admin account is locked out", "static")
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     hashed_pw_from_config = get_config_variable(CONFIG_PATH, 'admin_password')
-
-    if request.method == 'POST':
+    if request.method == 'POST' and not ADMIN_LOCKED == 1:
         password = request.form['password']
-        
         if check_password_hash(hashed_pw_from_config, password):
+            reset_admin_login_attempts()
             PrintLog('User logged in', 'INFO')
             session['logged_in'] = True
             session.permanent = True  # Make the session permanent so it uses the app's permanent session lifetime
             return redirect(url_for('main_bp.home'))
         else:
-            flash('Incorrect password.', 'error')
-            PrintLog('Incorrect admin password', 'ERROR')
-            
-
+            record_admin_failed_login()
+            if check_admin_locked():
+                flash(f"Admin account is locked out", "static")
+            else:
+                flash('Incorrect password.', 'error')
+                PrintLog('Incorrect admin password', 'ERROR')                
     return render_template('login.html')
 
 
@@ -683,12 +709,22 @@ def download():
 
 @app.route('/m3u/<path:filename>')
 def download_file(filename):
+    if check_playlist_locked():
+        abort(401, 'locked out')
+
     url_password = request.args.get('password')
    
     # Check if the provided password matches the hashed password
     hashed_pw_from_config = get_config_variable(CONFIG_PATH, 'playlist_password')
     if not check_password_hash(hashed_pw_from_config, url_password):
-        abort(401, 'Invalid password')
+        record_playlist_failed_login()
+        if check_playlist_locked():
+            abort(401, 'Playlist account is locked out')
+        else:
+            PrintLog('Incorrect playlist password', 'ERROR')  
+            abort(401, 'Invalid password')
+    else:
+        reset_playlist_login_attempts()    
 
     # Serve the file if authentication succeeds
     directory_to_serve = f'{BASE_DIR}/files'  # Update with your actual directory path
@@ -704,26 +740,38 @@ def security():
 
 @main_bp.route('/change_admin_password', methods=['POST'])
 def change_admin_password():
+    global MUST_CHANGE_PW
     new_password = request.form.get('admin_password')
     hashed_password = generate_password_hash(new_password)
     update_config_variable(CONFIG_PATH, 'admin_password', hashed_password)
     
     flash('Admin password updated successfully!', 'success')
 
+    hashed_admin_pw_from_config = get_config_variable(CONFIG_PATH, 'admin_password')
+    hashed_playlist_pw_from_config = get_config_variable(CONFIG_PATH, 'playlist_password')
+    MUST_CHANGE_PW = 0
+    if check_password_hash(hashed_admin_pw_from_config, "IPTV") or check_password_hash(hashed_playlist_pw_from_config, "IPTV"):
+        MUST_CHANGE_PW = 1
+
     return redirect(url_for('main_bp.security'))
 
 
 @main_bp.route('/change_playlist_credentials', methods=['POST'])
 def change_playlist_credentials():
+    global MUST_CHANGE_PW
     new_password = request.form.get('playlist_password')
     hashed_password = generate_password_hash(new_password)
     update_config_variable(CONFIG_PATH, 'playlist_password', hashed_password)
     
     flash('Playlist credentials updated successfully!', 'success')
 
+    hashed_admin_pw_from_config = get_config_variable(CONFIG_PATH, 'admin_password')
+    hashed_playlist_pw_from_config = get_config_variable(CONFIG_PATH, 'playlist_password')
+    MUST_CHANGE_PW = 0
+    if check_password_hash(hashed_admin_pw_from_config, "IPTV") or check_password_hash(hashed_playlist_pw_from_config, "IPTV"):
+        MUST_CHANGE_PW = 1
+
     return redirect(url_for('main_bp.security'))
-
-
 
 @main_bp.route('/movies')
 def movies():
@@ -1135,10 +1183,70 @@ def ansi_to_html_converter(text):
     text = ansi_escape.sub('', text)
     return text
 
+def get_log_lines(page, lines_per_page, hide_webserver_logs):
+    # Assuming BASE_DIR is defined globally or passed into the function. Update accordingly.
+    log_file = f'{BASE_DIR}/logs/M3Usort.log'
+    all_lines = []
+    
+    with open(log_file, 'r') as file:
+        for line in file:
+            # If hiding webserver logs, skip lines containing "GET /" or "POST /"
+            if hide_webserver_logs == "1" and ('GET /' in line or 'POST /' in line):
+                continue
+            all_lines.append(line.strip())
+    
+    # Reverse the order to show the most recent logs first
+    all_lines.reverse()
 
+    total_pages = len(all_lines) // lines_per_page + (1 if len(all_lines) % lines_per_page > 0 else 0)
+    
+    # Calculate start and end indices for slicing
+    start_index = (page - 1) * lines_per_page
+    end_index = start_index + lines_per_page
+    
+    # Slice the list to get the lines for the requested page
+    page_lines = all_lines[start_index:end_index]
+    
+    return page_lines, total_pages
 
 @main_bp.route('/log')
 def log():
+    hide_webserver_logs = get_config_variable(CONFIG_PATH, 'hide_webserver_logs')
+    page = request.args.get('page', 1, type=int)
+    lines_per_page = 75
+
+    log_entries = []  # Will store tuples of (metadata, message, css_class)
+
+    log_content, total_pages = get_log_lines(page, lines_per_page, hide_webserver_logs)
+    #total_pages = len(log_content) // lines_per_page + (1 if len(log_content) % lines_per_page > 0 else 0)
+
+    for line in log_content:
+        parts = line.split(' ', 3)  # Split at the third space character
+        if len(parts) >= 4:
+            metadata, message = parts[0] + ' ' + parts[1] + ' ' + parts[2], parts[3]
+        else:
+            metadata, message = line, ''
+
+        if 'DEBUG' in metadata:
+            css_class = 'log-debug'
+        elif 'INFO' in metadata:
+            css_class = 'log-info'
+        elif 'WARNING' in metadata:
+            css_class = 'log-warning'
+        elif 'ERROR' in metadata:
+            css_class = 'log-error'
+        elif 'CRITICAL' in metadata:
+            css_class = 'log-critical'
+        else:
+            css_class = ''
+
+        message = ansi_to_html_converter(message)        
+        log_entries.append((metadata, message, css_class))
+    
+    return render_template('log.html', log_entries=log_entries, current_page=page, total_pages=total_pages)
+
+@main_bp.route('/logOLD')
+def logOLD():
     hide_webserver_logs = get_config_variable(CONFIG_PATH, 'hide_webserver_logs')
     page = request.args.get('page', 1, type=int)
     lines_per_page = 75
@@ -1146,7 +1254,6 @@ def log():
     log_file = f'{BASE_DIR}/logs/M3Usort.log'
 
     log_entries = []  # Will store tuples of (metadata, message, css_class)
-
 
     try:
         log_lines = ""
@@ -1288,7 +1395,11 @@ def startup_delayed():
             PrintLog("Server not yet available, retrying...", "WARNING")
         sleep(1)
 
+        scheduler.add_job(id='System tasks scheduler', func=scheduled_system_tasks, trigger='interval', hours=1)
+
 def startup_instant():
+    global MUST_CHANGE_PW
+
     current_secret_key = get_config_variable(CONFIG_PATH, 'SECRET_KEY')
     if current_secret_key == "ChangeMe!":
         PrintLog("Updating SECRET_KEY . . .", "INFO")
@@ -1310,31 +1421,16 @@ def startup_instant():
         PrintLog(f"Directory {files_dir} created.", "INFO")
 
     check_for_app_updates()
-    if UPDATE_AVAILABLE == 1:
-        PrintLog(f"Update available!", "WARNING")
 
-    '''
-    m3u_url = get_config_variable(CONFIG_PATH, 'url')
-    maxage_before_download = int(get_config_variable(CONFIG_PATH, 'maxage_before_download'))
-    original_m3u_path = f'{BASE_DIR}/files/original.m3u'
-    if is_download_needed(original_m3u_path, maxage_before_download):
-        PrintLog(f"The M3U file is older than {maxage_before_download} hours or does not exist. Downloading now...", "INFO")
-        download_m3u(m3u_url, original_m3u_path)
-        PrintLog(f"Downloaded the M3U file to: {original_m3u_path}", "INFO")
-    else:
-        PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
-        update_groups_cache()
-    '''
+    # Check for default passwords
+    hashed_admin_pw_from_config = get_config_variable(CONFIG_PATH, 'admin_password')
+    hashed_playlist_pw_from_config = get_config_variable(CONFIG_PATH, 'playlist_password')
+
+    if check_password_hash(hashed_admin_pw_from_config, "IPTV") or check_password_hash(hashed_playlist_pw_from_config, "IPTV"):
+        MUST_CHANGE_PW = 1
+
 
 def PrintLog(string, type):
-    '''
-    log_file = f'{BASE_DIR}/logs/M3Usort.log'
-
-    if not os.path.exists(log_file):
-        with open(log_file, 'w') as f:
-            f.write('')  # Create the file by writing an empty string
-    '''
-
     if type == "DEBUG":
         logging.debug(string)
     elif type == "INFO":
@@ -1351,41 +1447,6 @@ def PrintLog(string, type):
 
 def update_groups_cache():
     PrintLog("Building the cache...", "INFO")
-    #m3u_url = get_config_variable(CONFIG_PATH, 'url')
-    #maxage_before_download = int(get_config_variable(CONFIG_PATH, 'maxage_before_download'))
-    #original_m3u_path = f'{BASE_DIR}/files/original.m3u'
-
-    '''
-    # Check and download M3U file based on age
-    if is_download_needed(original_m3u_path, maxage_before_download):
-        print(f"The M3U file is older than {maxage_before_download} hours or does not exist. Downloading now...")
-        download_m3u(m3u_url, original_m3u_path)
-        print(f"Downloaded the M3U file to: {original_m3u_path}")
-    else:
-        print(f"Using existing M3U file: {original_m3u_path}")
-    '''
-
-    '''
-    with open(CONFIG_PATH, 'r') as file:
-        config_content = file.read()
-    config_namespace = {}
-    exec(config_content, {}, config_namespace)
-    m3u_url = config_namespace.get('url', None)
-
-    if not m3u_url:
-        raise ValueError("M3U URL not found in config.")
-    '''
-
-    '''
-    # Extract username and password from the M3U URL
-    username, password = extract_credentials_from_url(m3u_url)
-    if not username or not password:
-        raise ValueError("Username or password could not be extracted from the M3U URL.")
-    
-    m3u_path = f'{BASE_DIR}/files/original.m3u'
-    if not os.path.exists(m3u_path):
-        raise FileNotFoundError(f"The original M3U file at '{m3u_path}' was not found.")
-    '''
         
     m3u_path = f'{BASE_DIR}/files/original.m3u'
     fetched_groups = fetch_channel_groups(m3u_path)
@@ -1396,13 +1457,9 @@ def update_groups_cache():
     PrintLog("End building the cache", "INFO") 
 
 
-import requests
-import re
-from packaging import version
 
 def check_for_app_updates():
-    global UPDATE_AVAILABLE
-    global UPDATE_VERSION
+    global UPDATE_AVAILABLE, UPDATE_VERSION
     try:
         # Fetch the changelog content from GitHub
         url = "https://raw.githubusercontent.com/koffienl/M3Usort/main/CHANGELOG.md"
@@ -1425,9 +1482,68 @@ def check_for_app_updates():
         if version.parse(latest_version) > version.parse(VERSION):
             UPDATE_AVAILABLE = 1
             UPDATE_VERSION = latest_version
+            PrintLog(f"Update available!", "WARNING")
     
     except Exception as e:
         print(f"Error checking for updates: {e}")
+
+
+def reset_admin_login_attempts():
+    global ADMIN_FAILED_LOGIN_ATTEMPTS, ADMIN_LAST_ATTEMPT_TIME
+    ADMIN_FAILED_LOGIN_ATTEMPTS = 0
+    ADMIN_LAST_ATTEMPT_TIME = None
+
+
+def record_admin_failed_login():
+    global ADMIN_FAILED_LOGIN_ATTEMPTS, ADMIN_LAST_ATTEMPT_TIME, ADMIN_LOCKED
+    now = datetime.now()
+    if ADMIN_LAST_ATTEMPT_TIME is None or now - ADMIN_LAST_ATTEMPT_TIME > LOCKOUT_TIMEFRAME:
+        # Reset the counter if we're outside the timeframe
+        ADMIN_FAILED_LOGIN_ATTEMPTS = 1
+    else:
+        ADMIN_FAILED_LOGIN_ATTEMPTS += 1
+    ADMIN_LAST_ATTEMPT_TIME = now
+    # Check for lockout condition
+    if ADMIN_FAILED_LOGIN_ATTEMPTS >= MAX_ATTEMPTS:
+        ADMIN_LOCKED = 1
+        PrintLog(f"Too many login attempts, admin password is now locked for {LOCKOUT_TIMEFRAME}", "WARNING")
+
+def check_admin_locked():
+    global ADMIN_LOCKED, ADMIN_LAST_ATTEMPT_TIME
+    if ADMIN_LOCKED and (datetime.now() - ADMIN_LAST_ATTEMPT_TIME) > LOCKOUT_TIMEFRAME:
+        # Reset lockout and counter after the timeframe
+        ADMIN_LOCKED = 0
+        reset_admin_login_attempts()
+    return ADMIN_LOCKED
+
+
+def reset_playlist_login_attempts():
+    global PLAYLIST_FAILED_LOGIN_ATTEMPTS, PLAYLIST_LAST_ATTEMPT_TIME
+    PLAYLIST_FAILED_LOGIN_ATTEMPTS = 0
+    PLAYLIST_LAST_ATTEMPT_TIME = None
+
+
+def record_playlist_failed_login():
+    global PLAYLIST_FAILED_LOGIN_ATTEMPTS, PLAYLIST_LAST_ATTEMPT_TIME, PLAYLIST_LOCKED
+    now = datetime.now()
+    if PLAYLIST_LAST_ATTEMPT_TIME is None or now - PLAYLIST_LAST_ATTEMPT_TIME > LOCKOUT_TIMEFRAME:
+        # Reset the counter if we're outside the timeframe
+        PLAYLIST_FAILED_LOGIN_ATTEMPTS = 1
+    else:
+        PLAYLIST_FAILED_LOGIN_ATTEMPTS += 1
+    PLAYLIST_LAST_ATTEMPT_TIME = now
+    # Check for lockout condition
+    if PLAYLIST_FAILED_LOGIN_ATTEMPTS >= MAX_ATTEMPTS:
+        PLAYLIST_LOCKED = 1
+        PrintLog(f"Too many login attempts, playlist password is now locked for {LOCKOUT_TIMEFRAME}", "WARNING")
+
+def check_playlist_locked():
+    global PLAYLIST_LOCKED, PLAYLIST_LAST_ATTEMPT_TIME
+    if PLAYLIST_LOCKED and (datetime.now() - PLAYLIST_LAST_ATTEMPT_TIME) > LOCKOUT_TIMEFRAME:
+        # Reset lockout and counter after the timeframe
+        PLAYLIST_LOCKED = 0
+        reset_playlist_login_attempts()
+    return PLAYLIST_LOCKED
 
 
 ###################################################

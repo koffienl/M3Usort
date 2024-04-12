@@ -246,6 +246,11 @@ bbody {
     border-color: #e74c3c;
 }
 
+.flash-message.static {
+    background-color: #e74c3c;
+    border-color: #e74c3c;
+}
+
 .flash-message.info {
     background-color: #3498db;
     border-color: #3498db;

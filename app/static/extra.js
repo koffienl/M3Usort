@@ -7,12 +7,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideFlashMessagesAfterDelay() {
         const flashMessages = document.querySelectorAll('.flash-message');
         flashMessages.forEach(flashMessage => {
-            setTimeout(() => {
-                flashMessage.style.opacity = '0';
-                setTimeout(() => flashMessage.remove(), 600); // Wait for opacity transition, then remove
-            }, 5000); // Hide after 5 seconds (5000ms)
+            // Check if the flashMessage does NOT have the 'no-hide' class
+            if (!flashMessage.classList.contains('static')) {
+                setTimeout(() => {
+                    flashMessage.style.opacity = '0';
+                    setTimeout(() => flashMessage.remove(), 600); // Wait for opacity transition, then remove
+                }, 5000); // Hide after 5 seconds (5000ms)
+            }
         });
     }
+    
 
     // Hide existing server-side flash messages after delay
     hideFlashMessagesAfterDelay();
