@@ -1,6 +1,6 @@
 # Changelog
 
-## 01.11
+## 0.1.11
 - When changing the 'Max Age Before Download (hours)' in the settings page it wouldn't get rescheduled. Fixed this.
 
 ## 0.1.10
