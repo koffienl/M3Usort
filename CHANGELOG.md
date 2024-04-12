@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.12
+## 0.1.13
 - Only offer update in menu when there is an update
 - Small fix in readme about the service
 
