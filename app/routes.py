@@ -33,7 +33,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.13'
+VERSION = '0.1.14'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -74,6 +74,23 @@ def inject_globals():
 
 @app.route('/restart', methods=['GET', 'POST'])
 def restart():
+    command = ['systemctl', 'restart', 'M3Usort.service']
+    if request.method == 'POST':
+        try:
+            subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return "OK"
+        except subprocess.CalledProcessError:
+            try:
+                subprocess.run(['sudo'] + command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                return "OK"
+            except subprocess.CalledProcessError as e:
+                # If both attempts fail, log and return an error
+                PrintLog(f"Error restarting service: {e}", "ERROR")
+                return "Error restarting the service", 500
+    else:
+        return "Not allowed", 500
+
+
     #if request.method == 'POST':
     try:
         subprocess.run(['systemctl', 'restart', 'M3Usort.service'], check=True)
@@ -83,8 +100,6 @@ def restart():
         # Handle error here
         PrintLog(f"Error restarting service: {e}", "ERROR")
         return "Error restarting the service", 500
-    #else:
-    #    return "Not supported", 500
 
 @app.route('/healthcheck')
 def healthcheck():
@@ -1505,6 +1520,7 @@ def check_for_app_updates():
         
         # Assume the first match is the most recent version
         latest_version = matches[0]
+        print(latest_version)
         if version.parse(latest_version) > version.parse(VERSION):
             UPDATE_AVAILABLE = 1
             UPDATE_VERSION = latest_version

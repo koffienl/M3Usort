@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.14
+- Added links to github in the menu
+- Try to restart with sudo if needed (experimental)
+
 ## 0.1.13
 - Only offer update in menu when there is an update
 - Small fix in readme about the service
