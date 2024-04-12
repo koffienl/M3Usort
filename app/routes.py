@@ -33,7 +33,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.10'
+VERSION = '0.1.11'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -937,6 +937,18 @@ def settings():
         update_config_variable(CONFIG_PATH, 'overwrite_movies', form.overwrite_movies.data)
         update_config_variable(CONFIG_PATH, 'hide_webserver_logs', form.hide_webserver_logs.data)
 
+
+        # Reschedule 'M3U Download scheduler'
+        job = scheduler.get_job('M3U Download scheduler')
+        if job:
+            scheduler.remove_job(id='M3U Download scheduler')
+        debug = get_config_variable(CONFIG_PATH, 'debug')
+        if debug == "yes":
+            scheduler.add_job(id='M3U Download scheduler', func=scheduled_renew_m3u, trigger='interval', minutes=form.maxage.data)
+        else:
+            scheduler.add_job(id='M3U Download scheduler', func=scheduled_renew_m3u, trigger='interval', hours=form.maxage.data)
+
+        # Reschdule 'VOD scheduler'
         job = scheduler.get_job('VOD scheduler')
         if form.enable_scheduler.data == "0":
             if job:
