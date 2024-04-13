@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.15
+- Schedulers are only rescheduled when the interval is changed
+- system scheduler wasn't working, fixed
+- Removed age check of original.mru in scheduled download
+- Added new logging category: NOTICE
+- Series only mentioned in the log if there are new episodes
+- When rebuilding the sorted playlist only the whitelisted group channel names are mentioned in the log, not the channels in that group
+
 ## 0.1.14
 - Added links to github in the menu
 - Try to restart with sudo if needed (experimental)

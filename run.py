@@ -16,6 +16,18 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 config_file = f'{current_dir}/config.py'
 sample_config_file = f'{current_dir}/config.sample'
 
+# Define a new custom log level
+logging.NOTICE = 25
+logging.addLevelName(logging.NOTICE, 'NOTICE')
+
+def notice(self, message, *args, **kwargs):
+    """Method to log at the 'NOTICE' level"""
+    if self.isEnabledFor(logging.NOTICE):
+        self._log(logging.NOTICE, message, args, **kwargs)
+
+# Adding 'notice' method to Logger class
+logging.Logger.notice = notice
+
 def setup_logging():
     current_dir = os.path.dirname(os.path.realpath(__file__))
     log_dir = os.path.join(current_dir, 'logs')
@@ -28,6 +40,7 @@ def setup_logging():
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)s: %(message)s',
                         handlers=[handler])
+
 
 setup_logging()
 

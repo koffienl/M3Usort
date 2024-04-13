@@ -23,6 +23,7 @@ import logging
 from packaging import version
 
 logging.getLogger('ipytv').setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 
 main_bp = Blueprint('main_bp', __name__)
 
@@ -33,7 +34,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.14'
+VERSION = '0.1.15'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -130,6 +131,12 @@ def scheduled_vod_download():
     update_movies_directory(movies_dir)
 
 def scheduled_renew_m3u():
+    original_m3u_path = f'{BASE_DIR}/files/original.m3u'
+    download_m3u(m3u_url, original_m3u_path)
+    PrintLog(f"Downloaded the M3U file to: {original_m3u_path}", "INFO")
+    rebuild()
+
+    '''
     m3u_url = get_config_variable(CONFIG_PATH, 'url')
     maxage_before_download = int(get_config_variable(CONFIG_PATH, 'maxage_before_download'))
     original_m3u_path = f'{BASE_DIR}/files/original.m3u'
@@ -141,6 +148,7 @@ def scheduled_renew_m3u():
     else:
         PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
         rebuild()
+    '''
 
 def download_m3u(url, output_path):
     response = requests.get(url)
@@ -180,7 +188,7 @@ def update_series_directory(series_dir):
             
             # If a match is found, download the series
             if matching_series:
-                PrintLog(f"Updating series: {matching_series['name']}", "INFO")
+                #PrintLog(f"Updating series: {matching_series['name']}", "INFO")
                 DownloadSeries(matching_series['series_id'])
             else:
                 PrintLog(f"No matching series found for directory: {dir_name}", "WARNING")
@@ -206,7 +214,8 @@ def update_movies_directory(movies_dir):
                 strm_file_path = os.path.join(movies_dir, f"{matching_movie['name']}", f"{matching_movie['name']}.strm")
                 # Check if .strm file exists and the overwrite setting
                 if not os.path.exists(strm_file_path) or overwrite_movies == 1:
-                    PrintLog(f"Updating movie: {matching_movie['name']}", "INFO")
+                    #PrintLog(f"Updating movie: {matching_movie['name']}", "INFO")
+                    PrintLog(f"Adding new file: {strm_file_path}", "NOTICE")
                     strm_content = f"{base_url}/movie/{username}/{password}/{matching_movie['stream_id']}.mkv"
                     
                     # Write to .strm file
@@ -601,7 +610,7 @@ def process_episode(episode, series_name, base_url, username, password, series_d
         strm_file_path = os.path.join(series_dir_path, strm_file_name)
 
         if not os.path.exists(strm_file_path) or overwrite_series == 1:
-            PrintLog(f"Adding new file: {strm_file_path}", "INFO")
+            PrintLog(f"Adding new file: {strm_file_path}", "NOTICE")
             with open(strm_file_path, 'w') as strm_file:
                 strm_file.write(strm_content)
     except Exception as episode_error:
@@ -701,10 +710,11 @@ def rebuild():
     # Process channels by desired group titles
     PrintLog("Filtering channels by desired group titles...", "INFO")
     for group_title in desired_group_titles:
+        PrintLog(f"Adding group {group_title}", "INFO")
         for channel in original_playlist:
             if channel.attributes.get('group-title') == group_title and channel not in collected_channels:
                 collected_channels.append(channel)
-                PrintLog(f'Included "{channel.name}" from group "{group_title}".', "INFO")
+                #PrintLog(f'Included "{channel.name}" from group "{group_title}".', "INFO")
 
     PrintLog(f"Total channels to be included in the new playlist: {len(collected_channels)}", "INFO")
 
@@ -855,6 +865,7 @@ def add_movie_to_server():
     with open(strm_file_path, 'w') as strm_file:
         strm_file.write(strm_content)
 
+    PrintLog(f"Adding new file: {strm_file_path}", "NOTICE")
     return jsonify(message="Movie added successfully"), 200
     # flash('Movie addedd successfully!', 'success')
 
@@ -969,31 +980,33 @@ def settings():
         # Reschedule 'M3U Download scheduler'
         job = scheduler.get_job('M3U Download scheduler')
         if job:
-            scheduler.remove_job(id='M3U Download scheduler')
-        debug = get_config_variable(CONFIG_PATH, 'debug')
-        if debug == "yes":
-            scheduler.add_job(id='M3U Download scheduler', func=scheduled_renew_m3u, trigger='interval', minutes=form.maxage.data)
-        else:
-            scheduler.add_job(id='M3U Download scheduler', func=scheduled_renew_m3u, trigger='interval', hours=form.maxage.data)
+            if str(job.trigger.interval) != str(f"{form.maxage.data}:00:00"):
+                scheduler.remove_job(id='M3U Download scheduler')
+                debug = get_config_variable(CONFIG_PATH, 'debug')
+                if debug == "yes":
+                    scheduler.add_job(id='M3U Download scheduler', func=scheduled_renew_m3u, trigger='interval', minutes=form.maxage.data)
+                else:
+                    scheduler.add_job(id='M3U Download scheduler', func=scheduled_renew_m3u, trigger='interval', hours=form.maxage.data)
 
         # Reschdule 'VOD scheduler'
         job = scheduler.get_job('VOD scheduler')
         if form.enable_scheduler.data == "0":
             if job:
-                PrintLog("Disable scheduled task", "INFO")
+                PrintLog("Disable scheduled task", "WARNING")
                 scheduler.remove_job(id='VOD scheduler')
 
         if form.enable_scheduler.data == "1":
-            form.scan_interval.data = int(form.scan_interval.data)
+            form.scan_interval.data = form.scan_interval.data
             if job:
-                scheduler.remove_job(id='VOD scheduler')
-            PrintLog("Enable scheduled task", "INFO")
+                if str(job.trigger.interval) != str(f"{form.scan_interval.data}:00:00"):
+                    scheduler.remove_job(id='VOD scheduler')
+                    PrintLog("Enable scheduled task", "INFO")
             
-            debug = get_config_variable(CONFIG_PATH, 'debug')
-            if debug == "yes":
-                scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', minutes=form.scan_interval.data)
-            else:
-                scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', hours=form.scan_interval.data)
+                    debug = get_config_variable(CONFIG_PATH, 'debug')
+                    if debug == "yes":
+                        scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', minutes=form.scan_interval.data)
+                    else:
+                        scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', hours=form.scan_interval.data)
 
         return redirect(url_for('main_bp.settings'))
 
@@ -1277,6 +1290,8 @@ def log():
             css_class = 'log-error'
         elif 'CRITICAL' in metadata:
             css_class = 'log-critical'
+        elif 'NOTICE' in metadata:
+            css_class = 'log-notice'
         else:
             css_class = ''
 
@@ -1376,7 +1391,7 @@ def fetch_channel_groups(m3u_path):
     return sorted(group_titles)
 
 def init():
-    PrintLog(f"Starting M3Usort {VERSION}", "INFO")
+    PrintLog(f"Starting M3Usort {VERSION}", "NOTICE")
 
     # Startup
     startup_instant()
@@ -1429,13 +1444,12 @@ def startup_delayed():
                         scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', minutes=scan_interval)
                     else:
                         scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', hours=scan_interval)
-                break                
+                scheduler.add_job(id='System tasks scheduler', func=scheduled_system_tasks, trigger='interval', hours=1)
+                break
 
         except requests.exceptions.RequestException as e:
             PrintLog("Server not yet available, retrying...", "WARNING")
         sleep(1)
-
-        scheduler.add_job(id='System tasks scheduler', func=scheduled_system_tasks, trigger='interval', hours=1)
 
 def startup_instant():
     global MUST_CHANGE_PW
@@ -1482,6 +1496,8 @@ def PrintLog(string, type):
         logging.error(string)
     elif type == "CRITICAL":
         logging.critical(string)
+    elif type == "NOTICE":
+        logger.notice(string)
 
     print(string)
 

@@ -9,15 +9,15 @@ After a fresh install, the program will create a URL to emulate the IPTV API. It
 When using a freshly installed Linux server (Debian 12, for instance), these are the steps to install:
 ```bash
 apt install python3 pip git -y
-git clone https://github.com/koffienl/M3USort.git
+git clone https://github.com/koffienl/M3Usort.git
 pip install Flask Flask-WTF requests m3u-ipytv flask_apscheduler packaging --break-system-packages
-cd M3USort
+cd M3Usort
 python3 run.py
 ```
 
 optional for running as a service:
 ```bash
-nano M3USort.service
+nano M3Usort.service
     # Edit the file according to the correct path (in this example, it would be /root/M3Usort) and save
 cp M3Usort.service /etc/systemd/system/M3Usort.service
 systemctl enable M3Usort && systemctl start M3Usort
