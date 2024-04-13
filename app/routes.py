@@ -34,7 +34,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.15'
+VERSION = '0.1.16'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -131,6 +131,7 @@ def scheduled_vod_download():
     update_movies_directory(movies_dir)
 
 def scheduled_renew_m3u():
+    m3u_url = get_config_variable(CONFIG_PATH, 'url')
     original_m3u_path = f'{BASE_DIR}/files/original.m3u'
     download_m3u(m3u_url, original_m3u_path)
     PrintLog(f"Downloaded the M3U file to: {original_m3u_path}", "INFO")
