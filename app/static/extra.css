@@ -14,6 +14,22 @@
     list-style-type: none;
 }
 
+#wanted-movies-list {
+    max-height: 30vh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+#wanted-series-list {
+    max-height: 30vh; /* Adjust based on preference */
+    overflow-y: auto; /* Enable vertical scrolling */
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
 .search-container {
     margin-bottom: 20px;
 }

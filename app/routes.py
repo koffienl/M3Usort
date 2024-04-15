@@ -21,6 +21,11 @@ import socket
 from time import sleep
 import logging
 from packaging import version
+import hashlib
+import difflib
+import shutil
+
+
 
 logging.getLogger('ipytv').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -126,9 +131,11 @@ def scheduled_system_tasks():
 def scheduled_vod_download():
     series_dir = get_config_variable(CONFIG_PATH, 'series_dir')
     update_series_directory(series_dir)
+    find_wanted_series(series_dir)
 
     movies_dir = get_config_variable(CONFIG_PATH, 'movies_dir')
     update_movies_directory(movies_dir)
+    find_wanted_movies(movies_dir)
 
 def scheduled_renew_m3u():
     m3u_url = get_config_variable(CONFIG_PATH, 'url')
@@ -150,14 +157,44 @@ def scheduled_renew_m3u():
         PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
         rebuild()
     '''
+def file_hash(filepath):
+    """Generate a hash for a file."""
+    hash_func = hashlib.sha256()  # Can use sha256 or md5
+    with open(filepath, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_func.update(chunk)
+    return hash_func.hexdigest()
+
 
 def download_m3u(url, output_path):
+    bakfile = f"{output_path}.bak"
+    shutil.copyfile(output_path, bakfile)
+
     response = requests.get(url)
     response.raise_for_status()
     with open(output_path, 'w', encoding='utf-8') as file:
         file.write(response.text)
     sleep(1)
     update_groups_cache()
+
+    hash_new = file_hash(output_path)
+    hash_bak = file_hash(bakfile)
+
+    if hash_new != hash_bak:
+        PrintLog("Playlist seems to have changes", "NOTICE")
+        #compare_files(output_path, bakfile)
+
+
+def compare_files(file1, file2):
+    """Compare two files and print differences."""
+    with open(file1, 'r') as f1, open(file2, 'r') as f2:
+        lines1 = f1.readlines()
+        lines2 = f2.readlines()
+
+    # Find and display differences using unified_diff
+    diff = difflib.unified_diff(lines1, lines2, fromfile='file1', tofile='file2', lineterm='')
+    for line in diff:
+        PrintLog(line, "NOTICE")
 
 def is_download_needed(file_path, max_age_hours):
     #file_mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
@@ -240,6 +277,19 @@ def get_config_variable(config_path, variable_name):
 
     return config_variable
 
+def get_config_array(config_path, array_name):
+    try:
+        with open(CONFIG_PATH, 'r') as file:
+            config_content = file.read()
+        config_namespace = {}
+        exec(config_content, {}, config_namespace)
+        config_variable = config_namespace.get(array_name)
+
+    except Exception as e:
+        flash(f"An error occurred: {e}", "danger")
+
+    return config_variable
+
 def update_config_variable(config_path, variable_name, new_value):
     variable_found = False
     with open(config_path, 'r') as file:
@@ -257,26 +307,27 @@ def update_config_variable(config_path, variable_name, new_value):
             file.write(f'{variable_name} = "{new_value}"\n')
 
 def update_config_array(config_path, array_name, new_value):
-    # Rewrite the configuration file with the updated group order
-
-    # Read the existing configuration file
+    #array_found = False
     with open(CONFIG_PATH, 'r') as file:
         lines = file.readlines()
 
     with open(CONFIG_PATH, 'w') as file:
-        in_desired_group_titles_section = False
+        array_found = False
+        array_found2 = False
         for line in lines:
             if line.strip().startswith(f'{array_name} = ['):
                 file.write(f'{array_name} = [\n')
                 for value in new_value:
                     file.write(f'    "{value}",\n')
                 file.write(']\n')
-                in_desired_group_titles_section = True
-            elif in_desired_group_titles_section and line.strip() == ']':
-                in_desired_group_titles_section = False
-            elif not in_desired_group_titles_section:
+                array_found = True
+                array_found2 = True
+            elif array_found and line.strip() == ']':
+                array_found = False
+            elif not array_found:
                 file.write(line)
-
+        if array_found2 == False:
+            file.write(f'{array_name} = {new_value}\n')
 
 def extract_credentials_from_url(m3u_url):
     match = re.search(r'username=([^&]+)&password=([^&]+)', m3u_url)
@@ -300,6 +351,15 @@ def require_auth():
 
     if request.path.startswith('/healthcheck'):
         return
+
+    if not request.path.startswith('/static') and not request.path.startswith('/update_home_data') and not request.method == 'POST':
+        if BASE_DIR.endswith('_dev'):
+            flash("Running in dev mode", "static")
+
+        debug = get_config_variable(CONFIG_PATH, 'debug')
+        if debug == "yes":
+            flash("Running in debug mode", "static")
+
 
     # Check if user is logged in
     if not session.get('logged_in') and request.endpoint not in ['login', 'static']:
@@ -563,11 +623,6 @@ def GetSeriesList():
 
     return series
 
-@main_bp.route('/series')
-def series():
-    series = GetSeriesList()
-    return render_template('series.html', series=series)
-
 def DownloadSeries(series_id):
     series_dir = get_config_variable(CONFIG_PATH, 'series_dir')
     m3u_url = get_config_variable(CONFIG_PATH, 'url')
@@ -812,10 +867,23 @@ def change_playlist_credentials():
 
     return redirect(url_for('main_bp.security'))
 
+@main_bp.route('/series')
+def series():
+    series = GetSeriesList()
+
+    wanted_series = get_config_array(CONFIG_PATH, "wanted_series")
+    if wanted_series == None:
+        wanted_series = []
+
+    return render_template('series.html', series=series, wanted_series=wanted_series)
+
+
 @main_bp.route('/movies')
 def movies():
     movies = []
-
+    wanted_movies = get_config_array(CONFIG_PATH, "wanted_movies")
+    if wanted_movies == None:
+        wanted_movies = []
     m3u_url = get_config_variable(CONFIG_PATH, 'url')
     
     # Parse the M3U URL to construct the API URL
@@ -832,9 +900,121 @@ def movies():
     # Filter the needed data
     movies = [{'name': movie['name'], 'stream_id': movie['stream_id']} for movie in movies_data]
 
-    return render_template('movies.html', movies=movies)
+    return render_template('movies.html', movies=movies, wanted_movies=wanted_movies)
 
 
+@main_bp.route('/add_wanted_serie', methods=['POST'])
+def add_wanted_serie():
+    wanted_serie = request.form.get('wanted_serie')
+    PrintLog(f"Added serie: '{wanted_serie}' to the wanted list", "NOTICE")
+    wanted_series = get_config_array(CONFIG_PATH, 'wanted_series')
+
+    if wanted_series == None:
+        wanted_series = []
+    wanted_series.append(wanted_serie)
+    update_config_array(CONFIG_PATH, 'wanted_series', wanted_series)
+    return redirect(url_for('main_bp.series'))
+
+@main_bp.route('/add_wanted_movie', methods=['POST'])
+def add_wanted_movie():
+    wanted_movie = request.form.get('wanted_movie')
+    PrintLog(f"Added movie: '{wanted_movie}' to the wanted list", "NOTICE")
+    wanted_movies = get_config_array(CONFIG_PATH, 'wanted_movies')
+
+    if wanted_movies == None:
+        wanted_movies = []
+    wanted_movies.append(wanted_movie)
+    update_config_array(CONFIG_PATH, 'wanted_movies', wanted_movies)
+    return redirect(url_for('main_bp.movies'))
+
+@main_bp.route('/remove_wanted_movie', methods=['POST'])
+def remove_wanted_movie():
+    data = request.get_json()
+    movie_name = data['movieName']
+    PrintLog(f"verwijder {movie_name}", "NOTICE")
+
+
+    wanted_movies = get_config_variable(CONFIG_PATH, 'wanted_movies')
+    wanted_movies.remove(movie_name)
+    update_config_array(CONFIG_PATH, 'wanted_movies', wanted_movies)
+
+    #return redirect(url_for('main_bp.movies'))
+    return '{ "result": "OK"} '
+
+
+@main_bp.route('/remove_wanted_serie', methods=['POST'])
+def remove_wanted_serie():
+    data = request.get_json()
+    serie_name = data['serieName']
+    PrintLog(f"verwijder {serie_name}", "NOTICE")
+
+
+    wanted_series = get_config_variable(CONFIG_PATH, 'wanted_series')
+    wanted_series.remove(serie_name)
+    update_config_array(CONFIG_PATH, 'wanted_series', wanted_series)
+
+    return '{ "result": "OK"} '
+
+
+def find_wanted_series(series_dir):
+    wanted_series = get_config_variable(CONFIG_PATH, 'wanted_series')
+    if wanted_series == None:
+        wanted_series = []
+
+    m3u_url = get_config_variable(CONFIG_PATH, 'url')
+    
+    # Extract credentials and base URL from m3u_url
+    username, password = extract_credentials_from_url(m3u_url)
+    parsed_url = urlparse(m3u_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    
+    # Retrieve the full serie list from the API
+    series_list = GetSeriesList()
+
+    # Check each wanted serie against the series list
+    for wanted in wanted_series.copy():
+        PrintLog(f"Searching for wanted serie '{wanted}'", "NOTICE")
+        # Find all series where the wanted serie title is a substring of the serie's name
+        matches = [serie for serie in series_list if wanted.lower() in serie['name'].lower()]
+        for serie in matches:
+            DownloadSeries(serie['series_id'])
+
+        wanted_series.remove(wanted)
+    update_config_array(CONFIG_PATH, 'wanted_series', wanted_series)
+
+def find_wanted_movies(movies_dir):
+    wanted_movies = get_config_variable(CONFIG_PATH, 'wanted_movies')
+    if wanted_movies == None:
+        wanted_movies = []
+
+    m3u_url = get_config_variable(CONFIG_PATH, 'url')
+    
+    # Extract credentials and base URL from m3u_url
+    username, password = extract_credentials_from_url(m3u_url)
+    parsed_url = urlparse(m3u_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    
+    # Retrieve the full movie list from the API
+    movies_list = GetMoviesList()
+
+    # Check each wanted movie against the movies list
+    for wanted in wanted_movies.copy():
+        PrintLog(f"Searching for wanted movie '{wanted}'", "NOTICE")
+        # Find all movies where the wanted movie title is a substring of the movie's name
+        matches = [movie for movie in movies_list if wanted.lower() in movie['name'].lower()]
+        for movie in matches:
+            # Prepare the directory and .strm file
+            movie_dir_path = os.path.join(movies_dir, movie['name'])
+            os.makedirs(movie_dir_path, exist_ok=True)
+            strm_file_path = os.path.join(movie_dir_path, f"{movie['name']}.strm")
+            strm_content = f"{base_url}/movie/{username}/{password}/{movie['stream_id']}.mkv"
+
+            # Write to .strm file
+            with open(strm_file_path, 'w') as strm_file:
+                strm_file.write(strm_content)
+            PrintLog(f"Created .strm file for {movie['name']}", "NOTICE")
+        wanted_movies.remove(wanted)
+    update_config_array(CONFIG_PATH, 'wanted_movies', wanted_movies)
 
 
 @main_bp.route('/add_movie_to_server', methods=['POST'])
@@ -1445,7 +1625,7 @@ def startup_delayed():
                         scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', minutes=scan_interval)
                     else:
                         scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', hours=scan_interval)
-                scheduler.add_job(id='System tasks scheduler', func=scheduled_system_tasks, trigger='interval', hours=1)
+                scheduler.add_job(id='System tasks scheduler', func=scheduled_system_tasks, trigger='interval', hours=1)                
                 break
 
         except requests.exceptions.RequestException as e:
@@ -1483,7 +1663,6 @@ def startup_instant():
 
     if check_password_hash(hashed_admin_pw_from_config, "IPTV") or check_password_hash(hashed_playlist_pw_from_config, "IPTV"):
         MUST_CHANGE_PW = 1
-
     running_as_service()
 
 def PrintLog(string, type):

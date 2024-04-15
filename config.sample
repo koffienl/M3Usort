@@ -31,3 +31,8 @@ target_channel_names = [
     "NL: RTL 4",
     "NL: RTL 5",
 ]
+
+wanted_series = [
+]
+wanted_movies = [
+]

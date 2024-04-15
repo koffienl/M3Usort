@@ -1,7 +1,10 @@
 # Changelog
 
+## 0.1.17
+- Added option to add future release movies and series to a watchlist.
+
 ## 0.1.16
-- fxed error in scheduled_renew_m3u after 0.1.15
+- Fixed error in scheduled_renew_m3u after 0.1.15
 
 ## 0.1.15
 - Schedulers are only rescheduled when the interval is changed

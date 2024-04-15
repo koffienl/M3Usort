@@ -4,23 +4,44 @@
 
 <div class="container" style="margin-top: 2rem;">
     <div class="row">
-        <div class="twelve columns">
+        <div class="eight columns">
             <h4>Search and save movies</h4>
 
-<!-- Content -->
-<div id="main">
-    <div class="search-container">
-        <input type="text" class="u-full-width" id="search-bar" placeholder="Search movies..." onkeyup="searchMovies()">
-    </div>
-    <ul id="movies-list">
-        {% for movie in movies %}
-        <li><a href="javascript:void(0)" class="movie-link" data-movie-name="{{ movie.name }}" data-movie-id="{{ movie.stream_id }}">{{ movie.name }}</a></li>
-        {% endfor %}
-    </ul>
-</div>
+            <!-- Content -->
+            <div id="main">
+                <div class="search-container">
+                    <input type="text" class="u-full-width" id="search-bar" placeholder="Search movies..."
+                        onkeyup="searchMovies()">
+                </div>
+                <ul id="movies-list">
+                    {% for movie in movies %}
+                    <li><a href="javascript:void(0)" class="movie-link" data-movie-name="{{ movie.name }}"
+                            data-movie-id="{{ movie.stream_id }}">{{ movie.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
 
+
+        <div class="four columns">
+            <div id="main">
+                <h4>Watchlist</h4>
+                <div">
+                    <form method="POST" action="{{ url_for('main_bp.add_wanted_movie') }}">
+                        <input type="text" class="u-full-width" id="wanted_movie" name="wanted_movie"
+                            placeholder="Add movie to watchlist">
+                    </form>
+            </div>
+            <ul id="wanted-movies-list">
+                {% for wanted_movie in wanted_movies %}
+                <li> <a href="javascript:void(0)" class="wanted-movie-link" style="text-decoration: none;"
+                        data-movie-name="{{ wanted_movie }}">&#10060;</a> {{ wanted_movie }}
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
+</div>
 </div>
 
 <!-- The Modal -->
@@ -28,7 +49,7 @@
     <div class="modal-content">
         <span class="close">&times;</span>
         <p id="modal-text">Are you sure you want to add this movie?</p>
-        <button class="button-primary" id="confirmBtn"  style="margin-right: 10px;">Yes</button>
+        <button class="button-primary" id="confirmBtn" style="margin-right: 10px;">Yes</button>
         <button id="cancelBtn">No</button>
     </div>
 </div>
@@ -45,23 +66,19 @@
         });
     }
 
+    function addMovieToServer(movieName, movieId) {
+        fetch('{{ url_for("main_bp.add_movie_to_server") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ movieName, movieId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // Output the response from the server
 
-function addMovieToServer(movieName, movieId) {
-    fetch('{{ url_for("main_bp.add_movie_to_server") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ movieName, movieId }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data); // Output the response from the server
-
-    var flashMessagesContainer = document.getElementById('flash-messages-container');
-
-
-            // Create and append the client-side flash message
+            var flashMessagesContainer = document.getElementById('flash-messages-container');
             var flashMessageDiv = document.createElement('div');
             flashMessageDiv.textContent = data.message;
             flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
@@ -69,64 +86,101 @@ function addMovieToServer(movieName, movieId) {
 
             // Hide the newly created flash message after delay
             hideFlashMessagesAfterDelay();
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
+    function RemoveWantedMovie(movieName) {
+        fetch('{{ url_for("main_bp.remove_wanted_movie") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ movieName }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // Output the response from the server
+            location.reload();
 
+            var flashMessagesContainer = document.getElementById('flash-messages-container');
+            var flashMessageDiv = document.createElement('div');
+            flashMessageDiv.textContent = data.message;
+            flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
+            flashMessagesContainer.appendChild(flashMessageDiv);
 
-    })
-    .catch(error => console.error('Error:', error));
-}
+            // Hide the newly created flash message after delay
+            hideFlashMessagesAfterDelay();
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById("myModal");
-    const modalText = document.getElementById("modal-text");
-    const confirmBtn = document.getElementById("confirmBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const span = document.getElementsByClassName("close")[0];
-    const movieLinks = document.querySelectorAll('.movie-link');
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById("myModal");
+        const modalText = document.getElementById("modal-text");
+        const confirmBtn = document.getElementById("confirmBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const span = document.getElementsByClassName("close")[0];
+        const movieLinks = document.querySelectorAll('.movie-link');
+        const wantedMovieLinks = document.querySelectorAll('.wanted-movie-link');
 
-    movieLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            const movieName = this.getAttribute('data-movie-name');
-            const movieId = this.getAttribute('data-movie-id');
-            modalText.innerHTML = `Are you sure you want to add Movie '${movieName}'?`;
-            modal.style.display = "block";
+        movieLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                const movieName = this.getAttribute('data-movie-name');
+                const movieId = this.getAttribute('data-movie-id');
+                modalText.innerHTML = `Are you sure you want to add Movie '${movieName}'?`;
+                modal.style.display = "block";
 
-            confirmBtn.onclick = function() {
-                console.log("Adding movie:", movieName, "ID:", movieId);
-                modal.style.display = "none";
-                addMovieToServer(movieName, movieId);
-                // Call function to handle adding the movie
-            };
+                confirmBtn.onclick = function () {
+                    console.log("Adding movie:", movieName, "ID:", movieId);
+                    modal.style.display = "none";
+                    addMovieToServer(movieName, movieId);
+                };
+            });
         });
+
+        wantedMovieLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                const movieName = this.getAttribute('data-movie-name');
+                modalText.innerHTML = `Are you sure you want to remove '${movieName}' from the wanted list?`;
+                modal.style.display = "block";
+
+                confirmBtn.onclick = function () {
+                    console.log("Removing movie:", movieName);
+                    modal.style.display = "none";
+                    RemoveWantedMovie(movieName);
+                };
+            });
+        });
+
+        cancelBtn.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        span.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
     });
 
-    cancelBtn.onclick = function() {
-        modal.style.display = "none";
-    };
+    function searchMovies() {
+        let input = document.getElementById('search-bar').value.toLowerCase();
+        let movieItems = document.querySelectorAll('#movies-list li');
 
-    span.onclick = function() {
-        modal.style.display = "none";
-    };
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    };
-});
-
-function searchMovies() {
-    let input = document.getElementById('search-bar').value.toLowerCase();
-    let movieItems = document.querySelectorAll('#movies-list li');
-
-    for (let i = 0; i < movieItems.length; i++) {
-        let movieName = movieItems[i].textContent || movieItems[i].innerText;
-        if (movieName.toLowerCase().indexOf(input) > -1) {
-            movieItems[i].style.display = "";
-        } else {
-            movieItems[i].style.display = "none";
+        for (let i = 0; i < movieItems.length; i++) {
+            let movieName = movieItems[i].textContent || movieItems[i].innerText;
+            if (movieName.toLowerCase().indexOf(input) > -1) {
+                movieItems[i].style.display = "";
+            } else {
+                movieItems[i].style.display = "none";
+            }
         }
     }
-}
 </script>
+
 {% endblock %}

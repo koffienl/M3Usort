@@ -46,10 +46,13 @@ Here you can change all the settings:
 Here you can change the password for the admin and for downloading the playlists. It is strongly advised to change this after installation.
 
 ### Admin -> Log
-Here you can view and search the logfile. Searching only works for the current page you are viewing. The logfile is located in M3USort/logs/M3USort.log.
+Here you can view and search the logfile. Searching only works for the current page you are viewing. The logfile is located in M3USort/logs/M3USort.log
 
 ### Admin -> Restart server
-If installed as a systemctl service as root (no sudo), you can easily restart the webserver with this option.
+If installed as a systemctl service, you can easily restart the webserver with this option.
+
+### Admin -> Udate
+When there is a newer version on github, and running as a service, you can do a one-click update here.
 
 ### Groups -> Add Groups
 Select the channel groups you would like to save to the new playlist.

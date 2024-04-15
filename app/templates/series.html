@@ -4,23 +4,44 @@
 
 <div class="container" style="margin-top: 2rem;">
     <div class="row">
-        <div class="twelve columns">
+        <div class="eight columns">
             <h4>Search and save series</h4>
 
-<!-- Content -->
-<div id="main">
-    <div class="search-container">
-        <input type="text" class="u-full-width" id="search-bar" placeholder="Search series..." onkeyup="searchSeries()">
-    </div>
-    <ul id="series-list">
-        {% for serie in series %}
-        <li><a href="javascript:void(0)" class="movie-link" data-serie-name="{{ serie.name }}" data-serie-id="{{ serie.series_id }}">{{ serie.name }}</a></li>
-        {% endfor %}
-    </ul>
-</div>
+            <!-- Content -->
+            <div id="main">
+                <div class="search-container">
+                    <input type="text" class="u-full-width" id="search-bar" placeholder="Search series..."
+                        onkeyup="searchSeries()">
+                </div>
+                <ul id="series-list">
+                    {% for serie in series %}
+                    <li><a href="javascript:void(0)" class="serie-link" data-serie-name="{{ serie.name }}"
+                            data-serie-id="{{ serie.series_id }}">{{ serie.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
 
+        <div class="four columns">
+            <div id="main">
+                <h4>Watchlist</h4>
+                <div">
+                    <form method="POST" action="{{ url_for('main_bp.add_wanted_serie') }}">
+                        <input type="text" class="u-full-width" id="wanted_serie" name="wanted_serie"
+                            placeholder="Add serie to watchlist">
+                    </form>
+            </div>
+            <ul id="wanted-series-list">
+                {% for wanted_serie in wanted_series %}
+                <li> <a href="javascript:void(0)" class="wanted-serie-link" style="text-decoration: none;"
+                        data-serie-name="{{ wanted_serie }}">&#10060;</a> {{ wanted_serie }}
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
+
+</div>
 </div>
 
 <!-- The Modal -->
@@ -47,22 +68,49 @@
 
 
 
-function addSerieToServer(serieName, serieId) {
-    fetch('{{ url_for("main_bp.add_series_to_server") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ serieName, serieId }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data); // Output the response from the server
+    function addSerieToServer(serieName, serieId) {
+        fetch('{{ url_for("main_bp.add_series_to_server") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ serieName, serieId }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Output the response from the server
 
-    var flashMessagesContainer = document.getElementById('flash-messages-container');
+                var flashMessagesContainer = document.getElementById('flash-messages-container');
 
 
-            // Create and append the client-side flash message
+                // Create and append the client-side flash message
+                var flashMessageDiv = document.createElement('div');
+                flashMessageDiv.textContent = data.message;
+                flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
+                flashMessagesContainer.appendChild(flashMessageDiv);
+
+                // Hide the newly created flash message after delay
+                hideFlashMessagesAfterDelay();
+
+
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function RemoveWantedSerie(serieName) {
+        fetch('{{ url_for("main_bp.remove_wanted_serie") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ serieName }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // Output the response from the server
+            location.reload();
+
+            var flashMessagesContainer = document.getElementById('flash-messages-container');
             var flashMessageDiv = document.createElement('div');
             flashMessageDiv.textContent = data.message;
             flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
@@ -70,65 +118,79 @@ function addSerieToServer(serieName, serieId) {
 
             // Hide the newly created flash message after delay
             hideFlashMessagesAfterDelay();
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
 
-    })
-    .catch(error => console.error('Error:', error));
-}
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById("myModal");
+        const modalText = document.getElementById("modal-text");
+        const confirmBtn = document.getElementById("confirmBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const span = document.getElementsByClassName("close")[0];
+        const serieLinks = document.querySelectorAll('.serie-link');
+        const wantedSerieLinks = document.querySelectorAll('.wanted-serie-link');
 
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById("myModal");
-    const modalText = document.getElementById("modal-text");
-    const confirmBtn = document.getElementById("confirmBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const span = document.getElementsByClassName("close")[0];
-    const movieLinks = document.querySelectorAll('.movie-link');
+        serieLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                const serieName = this.getAttribute('data-serie-name');
+                const serieId = this.getAttribute('data-serie-id');
+                modalText.innerHTML = `Are you sure you want to add Serie '${serieName}'?`;
+                modal.style.display = "block";
 
-    movieLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            const serieName = this.getAttribute('data-serie-name');
-            const serieId = this.getAttribute('data-serie-id');
-            modalText.innerHTML = `Are you sure you want to add Serie '${serieName}'?`;
-            modal.style.display = "block";
-            
-            confirmBtn.onclick = function() {
-                console.log("Adding serie:", serieName, "ID:", serieId);
-                modal.style.display = "none";
-                addSerieToServer(serieName, serieId);
-                // Call function to handle adding the serie
-            };
+                confirmBtn.onclick = function () {
+                    console.log("Adding serie:", serieName, "ID:", serieId);
+                    modal.style.display = "none";
+                    addSerieToServer(serieName, serieId);
+                    // Call function to handle adding the serie
+                };
+            });
         });
+
+        wantedSerieLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                const serieName = this.getAttribute('data-serie-name');
+                modalText.innerHTML = `Are you sure you want to remove '${serieName}' from the wanted list?`;
+                modal.style.display = "block";
+
+                confirmBtn.onclick = function () {
+                    console.log("Removing serie:", serieName);
+                    modal.style.display = "none";
+                    RemoveWantedSerie(serieName);
+                };
+            });
+        });
+
+        cancelBtn.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        span.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
     });
 
-    cancelBtn.onclick = function() {
-        modal.style.display = "none";
-    };
-
-    span.onclick = function() {
-        modal.style.display = "none";
-    };
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    };
-});
 
 
+    function searchSeries() {
+        let input = document.getElementById('search-bar').value.toLowerCase();
+        let serieItems = document.querySelectorAll('#series-list li');
 
-function searchSeries() {
-    let input = document.getElementById('search-bar').value.toLowerCase();
-    let serieItems = document.querySelectorAll('#series-list li');
-
-    for (let i = 0; i < serieItems.length; i++) {
-        let serieName = serieItems[i].textContent || serieItems[i].innerText;
-        if (serieName.toLowerCase().indexOf(input) > -1) {
-            serieItems[i].style.display = "";
-        } else {
-            serieItems[i].style.display = "none";
+        for (let i = 0; i < serieItems.length; i++) {
+            let serieName = serieItems[i].textContent || serieItems[i].innerText;
+            if (serieName.toLowerCase().indexOf(input) > -1) {
+                serieItems[i].style.display = "";
+            } else {
+                serieItems[i].style.display = "none";
+            }
         }
     }
-}
 </script>
 {% endblock %}
