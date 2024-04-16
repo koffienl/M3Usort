@@ -1,64 +1,64 @@
 <!-- nav.html -->
 <nav class="navbar fixed-top">
-<!--  <div class="container"> -->
-    <ul class="navbar-list">
+  <!--  <div class="container"> -->
+  <ul class="navbar-list">
 
-      <li class="navbar-item">
-          <a href="{{ url_for('main_bp.home') }}">Home</a>
-</li>
+    <li class="navbar-item">
+      <a href="{{ url_for('main_bp.home') }}">Home</a>
+    </li>
 
-      <li class="navbar-item dropdown">
-        <a href="javascript:void(0)" class="dropbtn">Admin</a>
-        <div class="dropdown-content">
-          <a href="{{ url_for('main_bp.settings') }}">Settings</a>
-          <a href="{{ url_for('main_bp.security') }}">Security</a>
-          <a href="{{ url_for('main_bp.log') }}">Log</a>
-          {% if RUNNING_AS_SERVICE %}
-            <a href="javascript:void(0)" id="restart-link" class="restart-link">Restart server</a>
-          {% endif %}
-          {% if RUNNING_AS_SERVICE and UPDATE_AVAILABLE %}
-            <a href="javascript:void(0)" id="update-link" class="update-link">Update</a>
-          {% endif %}
-        </div>
-      </li>
-      <li class="navbar-item dropdown">
-        <a href="javascript:void(0)" class="dropbtn">Groups</a>
-        <div class="dropdown-content">
-          <a href="{{ url_for('main_bp.groups') }}">Add groups</a>
-          <a href="{{ url_for('main_bp.reorder_groups') }}">Sort groups</a>
-        </div>
-      </li>
+    <li class="navbar-item dropdown">
+      <a href="javascript:void(0)" class="dropbtn">Admin</a>
+      <div class="dropdown-content">
+        <a href="{{ url_for('main_bp.settings') }}">Settings</a>
+        <a href="{{ url_for('main_bp.security') }}">Security</a>
+        <a href="{{ url_for('main_bp.log') }}">Log</a>
+        {% if RUNNING_AS_SERVICE %}
+        <a href="javascript:void(0)" id="restart-link" class="restart-link">Restart server</a>
+        {% endif %}
+        {% if RUNNING_AS_SERVICE and UPDATE_AVAILABLE %}
+        <a href="javascript:void(0)" id="update-link" class="update-link">Update</a>
+        {% endif %}
+      </div>
+    </li>
+    <li class="navbar-item dropdown">
+      <a href="javascript:void(0)" class="dropbtn">Groups</a>
+      <div class="dropdown-content">
+        <a href="{{ url_for('main_bp.groups') }}">Add groups</a>
+        <a href="{{ url_for('main_bp.reorder_groups') }}">Sort groups</a>
+      </div>
+    </li>
 
-      <li class="navbar-item dropdown">
-        <a href="javascript:void(0)" class="dropbtn">Channels</a>
-        <div class="dropdown-content">
-          <a href="{{ url_for('main_bp.channel_selection') }}">Add channel groups</a>
-          <a href="{{ url_for('main_bp.reorder_channels') }}">Sort channels</a>
-          <a href=# id="rebuild-link">Rebuild M3U</a>
-        </div>
-      </li>
+    <li class="navbar-item dropdown">
+      <a href="javascript:void(0)" class="dropbtn">Channels</a>
+      <div class="dropdown-content">
+        <a href="{{ url_for('main_bp.channel_selection') }}">Add channel groups</a>
+        <a href="{{ url_for('main_bp.reorder_channels') }}">Sort channels</a>
+        <a href=# id="rebuild-link">Rebuild M3U</a>
+      </div>
+    </li>
 
-      <li class="navbar-item dropdown">
-        <a href="javascript:void(0)" class="dropbtn">VOD</a>
-        <div class="dropdown-content">
-          <a href="{{ url_for('main_bp.movies') }}">Movies</a>
-          <a href="{{ url_for('main_bp.series') }}">Series</a>
-          <a href=# id="download-link">Start download</a>
-        </div>
-      </li>
+    <li class="navbar-item dropdown">
+      <a href="javascript:void(0)" class="dropbtn">VOD</a>
+      <div class="dropdown-content">
+        <a href="{{ url_for('main_bp.movies') }}">Movies</a>
+        <a href="{{ url_for('main_bp.series') }}">Series</a>
+        <a href=# id="download-link">Start download</a>
+      </div>
+    </li>
 
-      <li class="navbar-item">
-          <a href="/logout">Logout</a>
-      </li>
+    <li class="navbar-item">
+      <a href="/logout">Logout</a>
+    </li>
 
-      <li class="navbar-item dropdown">
-        <a href="javascript:void(0)" class="dropbtn">About</a>
-        <div class="dropdown-content">
-          <a href="https://github.com/koffienl/M3Usort/blob/main/README.md" target="_blank">ReadMe</a>
-          <a href="https://github.com/koffienl/M3Usort/blob/main/CHANGELOG.md" target="_blank">Changelog</a>
-        </div>
-      </li>
+    <li class="navbar-item dropdown">
+      <a href="javascript:void(0)" class="dropbtn">About</a>
+      <div class="dropdown-content">
+        <a href="https://github.com/koffienl/M3Usort/blob/main/README.md" target="_blank">ReadMe</a>
+        <a href="https://github.com/koffienl/M3Usort/blob/main/CHANGELOG.md" target="_blank">Changelog</a>
+      </div>
+    </li>
 
-    </ul>
-<!--  </div> -->
+  </ul>
+  <!--  </div> -->
 </nav>

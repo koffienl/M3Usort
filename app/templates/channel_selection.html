@@ -3,73 +3,82 @@
 {% block content %}
 
 <style>
-.group-li {
-    display: flex;
-    align-items: center; /* This ensures the label is centered with the checkbox */
-    margin-bottom: 10px; /* Adjust as needed for space between list items */
-}
+    .group-li {
+        display: flex;
+        align-items: center;
+        /* This ensures the label is centered with the checkbox */
+        margin-bottom: 10px;
+        /* Adjust as needed for space between list items */
+    }
 
 
-input[type="checkbox"] {
-    margin-right: 10px; /* Adjust as needed for space between checkbox and label */
-}
+    input[type="checkbox"] {
+        margin-right: 10px;
+        /* Adjust as needed for space between checkbox and label */
+    }
 
-#groups-list {
-    max-height: 30vh;
-    overflow-y: auto;
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-}
+    #groups-list {
+        max-height: 30vh;
+        overflow-y: auto;
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+    }
 </style>
 
-<div class="container" style="margin-top: 2rem;">
+<div class="container">
+    <h4>Add channel groups to custom group</h4>
     <div class="row">
         <div class="twelve columns">
-            <h4>Add channel groups to custom group</h4>
 
-<!-- Content -->
-    <form method="POST" action="{{ url_for('main_bp.save_channel_selection') }}">
+
+            <!-- Content -->
+            <form method="POST" action="{{ url_for('main_bp.save_channel_selection') }}">
                 <input class="button-primary" type="submit" value="Save" style="margin-top: 1rem;">
 
-<div id="main">
-    <div class="search-container">
-        <input type="text" class="u-full-width" id="search-bar" placeholder="Search channel groups..." onkeyup="searchGroups()">
-    </div>
+                <div id="main">
+                    <div class="search-container">
+                        <input type="text" class="u-full-width" id="search-bar" placeholder="Search channel groups..."
+                            onkeyup="searchGroups()">
+                    </div>
 
-    <ul id="groups-list">
-            {% if groups %}
-                {% for group in groups %}
-                <li class="group-li">
-                    <input type="checkbox" id="{{ group | replace(' ', '_') | replace('(', '') | replace(')', '') | replace('/', '_') }}" name="selected_groups[]" value="{{ group }}"
-                    {% if group in desired_group_titles %} checked {% endif %}>
-                    <label for="{{ group | replace(' ', '_') | replace('(', '') | replace(')', '') | replace('/', '_') }}">{{ group }}</label>
-                </li>
-                {% endfor %}
-            {% else %}
-                <p>No channel groups found.</p>
-            {% endif %}
-    </ul>
-</div>
-</form>
+                    <ul id="groups-list">
+                        {% if groups %}
+                        {% for group in groups %}
+                        <li class="group-li">
+                            <input type="checkbox"
+                                id="{{ group | replace(' ', '_') | replace('(', '') | replace(')', '') | replace('/', '_') }}"
+                                name="selected_groups[]" value="{{ group }}" {% if group in desired_group_titles %}
+                                checked {% endif %}>
+                            <label
+                                for="{{ group | replace(' ', '_') | replace('(', '') | replace(')', '') | replace('/', '_') }}">{{
+                                group }}</label>
+                        </li>
+                        {% endfor %}
+                        {% else %}
+                        <p>No channel groups found.</p>
+                        {% endif %}
+                    </ul>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <script>
-function searchGroups() {
-    let input = document.getElementById('search-bar').value.toLowerCase();
-    let groupItems = document.querySelectorAll('#groups-list li');
+    function searchGroups() {
+        let input = document.getElementById('search-bar').value.toLowerCase();
+        let groupItems = document.querySelectorAll('#groups-list li');
 
-    for (let i = 0; i < groupItems.length; i++) {
-        let groupName = groupItems[i].textContent || groupItems[i].innerText;
-        if (groupName.toLowerCase().indexOf(input) > -1) {
-            groupItems[i].style.display = "";
-        } else {
-            groupItems[i].style.display = "none";
+        for (let i = 0; i < groupItems.length; i++) {
+            let groupName = groupItems[i].textContent || groupItems[i].innerText;
+            if (groupName.toLowerCase().indexOf(input) > -1) {
+                groupItems[i].style.display = "";
+            } else {
+                groupItems[i].style.display = "none";
+            }
         }
     }
-}
 </script>
 
 

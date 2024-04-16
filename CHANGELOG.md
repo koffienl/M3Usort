@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.20
+- Some HTML cleanup
+- Added processing of watchlist at manual start of download VOD
+
 ## 0.1.19
 - Removed code to try to compare new M3U with previous M3U
 

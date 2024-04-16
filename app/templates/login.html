@@ -1,20 +1,20 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<div class="container" style="margin-top: 2rem;">
+<div class="container">
+    <h4>Login</h4>
     <div class="row">
         <div class="twelve columns">
-            <h4>Login</h4>
-    <form action="{{ url_for('login') }}" method="post">
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required autofocus>
-        </div>
-        <div>
-            <input class="button-primary" type="submit" value="Login" style="margin-top: 1rem;">
+            <form action="{{ url_for('login') }}" method="post">
+                <div>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required autofocus>
+                </div>
+                <div>
+                    <input class="button-primary" type="submit" value="Login" style="margin-top: 1rem;">
 
-        </div>
-    </form>
+                </div>
+            </form>
 
 
         </div>

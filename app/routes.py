@@ -39,7 +39,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.19'
+VERSION = '0.1.20'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -701,18 +701,21 @@ def rebuild():
 
 @main_bp.route('/download')
 def download():
+    '''
     series_dir = get_config_variable(CONFIG_PATH, 'series_dir')
     update_series_directory(series_dir)
+    find_wanted_series(series_dir)
 
     movies_dir = get_config_variable(CONFIG_PATH, 'movies_dir')
     update_movies_directory(movies_dir)
+    find_wanted_movies(movies_dir)
+    '''
+    scheduled_vod_download()
 
-    # Redirect back to the referrer page, or to a default page if no referrer is set
     referrer = request.referrer
     if referrer:
         return redirect(referrer)
     else:
-        # Redirect to a default route if the referrer is not found
         return redirect(url_for('main_bp.home'))
 
 

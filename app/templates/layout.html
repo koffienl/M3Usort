@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <!-- Basic Page Needs -->
     <meta charset="utf-8">
@@ -26,6 +27,7 @@
 
     {% block head %}{% endblock %}
 </head>
+
 <body>
 
     {% include 'nav.html' %}
@@ -33,36 +35,37 @@
 
 
 
-        <!-- Flash Messages -->
-        <div id="flash-messages-container" class="container">
+    <!-- Flash Messages -->
+    <div id="flash-messages-container" class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div id="flash-message" class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div id="flash-message" class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
-        </div>
+    </div>
 
-        <!-- Main content -->
-        {% block content %}{% endblock %}
+    <!-- Main content -->
+    {% block content %}{% endblock %}
 
-        <!-- Footer -->
-        {% block footer %}{% endblock %}
+    <!-- Footer -->
+    {% block footer %}{% endblock %}
     <!-- </div> -->
 
 
-<!-- The Modal -->
-<div id="myModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <p id="modal-text">Are you sure you want to add this movie?</p>
-        <button class="button-primary" id="confirmBtn"  style="margin-right: 10px;">Yes</button>
-        <button id="cancelBtn">No</button>
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p id="modal-text">Are you sure you want to add this movie?</p>
+            <button class="button-primary" id="confirmBtn" style="margin-right: 10px;">Yes</button>
+            <button id="cancelBtn">No</button>
+        </div>
     </div>
-</div>
 
     {% block scripts %}{% endblock %}
 </body>
-    <script src="{{ url_for('static', filename='extra.js') }}"></script>
+<script src="{{ url_for('static', filename='extra.js') }}"></script>
+
 </html>

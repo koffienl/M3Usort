@@ -1,21 +1,23 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<div class="container" style="margin-top: 2rem;">
+<div class="container">
+    <h4>Security Settings</h4>
     <div class="row">
         <div class="twelve columns">
-            <h4>Security Settings</h4>
             <!-- Form for changing admin password -->
             <form method="POST" action="{{ url_for('main_bp.change_admin_password') }}" style="margin-bottom: 2rem;">
                 <label for="adminPassword">New Admin Password</label>
-                <input class="u-full-width" type="password" id="adminPassword" name="admin_password" placeholder="New admin Password" required>
+                <input class="u-full-width" type="password" id="adminPassword" name="admin_password"
+                    placeholder="New admin Password" required>
                 <input class="button-primary" type="submit" value="Change Admin Password" style="margin-top: 1rem;">
             </form>
 
             <!-- Form for changing playlist credentials -->
             <form method="POST" action="{{ url_for('main_bp.change_playlist_credentials') }}">
                 <label for="playlistPassword">New Playlist Password</label>
-                <input class="u-full-width" type="password" id="playlistPassword" name="playlist_password" placeholder="New playlist Password" required>
+                <input class="u-full-width" type="password" id="playlistPassword" name="playlist_password"
+                    placeholder="New playlist Password" required>
                 <input class="button-primary" type="submit" value="Change Playlist Password" style="margin-top: 1rem;">
             </form>
         </div>

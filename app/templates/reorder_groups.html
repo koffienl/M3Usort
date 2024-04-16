@@ -2,84 +2,84 @@
 
 {% block content %}
 
-<div class="container" style="margin-top: 2rem;">
+<div class="container">
+    <h4>Reorder Channel Groups</h4>
     <div class="row">
         <div class="twelve columns">
-            <h4>Reorder Channel Groups</h4>
-<form method="POST" action="{{ url_for('main_bp.save_reordered_groups') }}">
+            <form method="POST" action="{{ url_for('main_bp.save_reordered_groups') }}">
                 <input class="button-primary" type="submit" value="Save" style="margin-top: 1rem;">
 
-    <input type="hidden" id="group_order" name="group_order">
+                <input type="hidden" id="group_order" name="group_order">
 
-<ul id="sortable" class="list-group">
-    {% for group in desired_group_titles %}
-    <li class="list-group-item draggable-item" draggable="true" data-group="{{ group }}">
-        <span class="drag-handle">&#x2630;</span>
-        {{ group }}
-        <a href="#" class="delete-btn" onclick="deleteItem(this)">&#10060;</a> <!-- Delete Button -->
-    </li>
-    {% endfor %}
-</ul>
+                <ul id="sortable" class="list-group">
+                    {% for group in desired_group_titles %}
+                    <li class="list-group-item draggable-item" draggable="true" data-group="{{ group }}">
+                        <span class="drag-handle">&#x2630;</span>
+                        {{ group }}
+                        <a href="#" class="delete-btn" onclick="deleteItem(this)">&#10060;</a> <!-- Delete Button -->
+                    </li>
+                    {% endfor %}
+                </ul>
 
-</form>
+            </form>
 
         </div>
     </div>
 </div>
 
 <script>
-let ul = document.getElementById('sortable');
+    let ul = document.getElementById('sortable');
 
-// This makes updateOrderInput globally accessible
-window.updateOrderInput = function() {
-    let order = [];
-    ul.querySelectorAll('.list-group-item').forEach(item => {
-        order.push(item.getAttribute('data-group'));
-    });
-    document.getElementById('group_order').value = JSON.stringify(order);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    let draggingElement = null;
-
-    ul.querySelectorAll('.list-group-item').forEach(item => {
-        item.addEventListener('dragstart', (event) => {
-            draggingElement = item;
+    // This makes updateOrderInput globally accessible
+    window.updateOrderInput = function () {
+        let order = [];
+        ul.querySelectorAll('.list-group-item').forEach(item => {
+            order.push(item.getAttribute('data-group'));
         });
+        document.getElementById('group_order').value = JSON.stringify(order);
+    }
 
-        item.addEventListener('dragover', (event) => {
-            event.preventDefault(); // Necessary to allow dropping
-            const closest = [...ul.querySelectorAll('.list-group-item')].reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = event.clientY - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
+    document.addEventListener('DOMContentLoaded', function () {
+        let draggingElement = null;
+
+        ul.querySelectorAll('.list-group-item').forEach(item => {
+            item.addEventListener('dragstart', (event) => {
+                draggingElement = item;
+            });
+
+            item.addEventListener('dragover', (event) => {
+                event.preventDefault(); // Necessary to allow dropping
+                const closest = [...ul.querySelectorAll('.list-group-item')].reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = event.clientY - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+                if (closest && draggingElement !== closest) {
+                    ul.insertBefore(draggingElement, closest.nextSibling);
+                    updateOrderInput();
                 }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-            
-            if (closest && draggingElement !== closest) {
-                ul.insertBefore(draggingElement, closest.nextSibling);
+            });
+
+            item.addEventListener('dragend', () => {
                 updateOrderInput();
-            }
+            });
         });
 
-        item.addEventListener('dragend', () => {
-            updateOrderInput();
-        });
+        // Call updateOrderInput initially to ensure the order is correct on page load
+        updateOrderInput();
     });
 
-    // Call updateOrderInput initially to ensure the order is correct on page load
-    updateOrderInput();
-});
-
-// Making deleteItem globally accessible
-window.deleteItem = function(element) {
-    // Remove the list item
-    element.closest('.list-group-item').remove();
-    // Update the order in the hidden input (since an item was removed)
-    updateOrderInput();
-}
+    // Making deleteItem globally accessible
+    window.deleteItem = function (element) {
+        // Remove the list item
+        element.closest('.list-group-item').remove();
+        // Update the order in the hidden input (since an item was removed)
+        updateOrderInput();
+    }
 </script>
 {% endblock %}
