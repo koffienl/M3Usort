@@ -39,7 +39,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.18'
+VERSION = '0.1.19'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -154,34 +154,12 @@ def file_hash(filepath):
 
 
 def download_m3u(url, output_path):
-    bakfile = f"{output_path}.bak"
-    shutil.copyfile(output_path, bakfile)
-
     response = requests.get(url)
     response.raise_for_status()
     with open(output_path, 'w', encoding='utf-8') as file:
         file.write(response.text)
     sleep(1)
     update_groups_cache()
-
-    hash_new = file_hash(output_path)
-    hash_bak = file_hash(bakfile)
-
-    if hash_new != hash_bak:
-        PrintLog("Playlist seems to have changes", "NOTICE")
-        #compare_files(output_path, bakfile)
-
-
-def compare_files(file1, file2):
-    """Compare two files and print differences."""
-    with open(file1, 'r') as f1, open(file2, 'r') as f2:
-        lines1 = f1.readlines()
-        lines2 = f2.readlines()
-
-    # Find and display differences using unified_diff
-    diff = difflib.unified_diff(lines1, lines2, fromfile='file1', tofile='file2', lineterm='')
-    for line in diff:
-        PrintLog(line, "NOTICE")
 
 def is_download_needed(file_path, max_age_hours):
     #file_mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
