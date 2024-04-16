@@ -1,6 +1,7 @@
 config.py
 commit.sh
 *.m3u
+*.m3u.bak
 M3Usort.log
 M3Usort.log.*
 TODO.md
