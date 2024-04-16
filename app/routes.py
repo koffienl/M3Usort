@@ -39,7 +39,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.17'
+VERSION = '0.1.18'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -144,19 +144,6 @@ def scheduled_renew_m3u():
     PrintLog(f"Downloaded the M3U file to: {original_m3u_path}", "INFO")
     rebuild()
 
-    '''
-    m3u_url = get_config_variable(CONFIG_PATH, 'url')
-    maxage_before_download = int(get_config_variable(CONFIG_PATH, 'maxage_before_download'))
-    original_m3u_path = f'{BASE_DIR}/files/original.m3u'
-
-    if is_download_needed(original_m3u_path, maxage_before_download):
-        PrintLog(f"The M3U file is older than {maxage_before_download} hours or does not exist. Downloading now...", "INFO")
-        download_m3u(m3u_url, original_m3u_path)
-        PrintLog(f"Downloaded the M3U file to: {original_m3u_path}", "INFO")
-    else:
-        PrintLog(f"Using existing M3U file: {original_m3u_path}", "INFO")
-        rebuild()
-    '''
 def file_hash(filepath):
     """Generate a hash for a file."""
     hash_func = hashlib.sha256()  # Can use sha256 or md5
@@ -672,56 +659,6 @@ def process_episode(episode, series_name, base_url, username, password, series_d
     except Exception as episode_error:
         PrintLog(f"Error processing episode '{episode['title']}' for series '{series_name}': {episode_error}", "ERROR")
 
-def DownloadSeriesORG(series_id):
-    series_dir = get_config_variable(CONFIG_PATH, 'series_dir')
-    m3u_url = get_config_variable(CONFIG_PATH, 'url')
-    username, password = extract_credentials_from_url(m3u_url)
-    overwrite_series = int(get_config_variable(CONFIG_PATH, 'overwrite_series'))  # Assuming this is how you'd get it
-
-    # Ensure series_dir, m3u_url, username, password, and overwrite_series are available
-    if not all([series_dir, m3u_url, username, password, isinstance(overwrite_series, int)]):
-        raise ValueError("Configuration error. Ensure series_dir, m3u_url, username, password, and overwrite_series are set.")
-
-    # API call to get series info
-    parsed_url = urlparse(m3u_url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    series_info_url = f"{base_url}/player_api.php?username={username}&password={password}&action=get_series_info&series_id={series_id}"
-    response = requests.get(series_info_url)
-    series_info = response.json()
-
-    # Extract series name
-    series_name = series_info['info']['name']
-
-    PrintLog(f"series_info['episodes']: {series_info['episodes']}", "WARNING")
-
-    # Process each episode
-    for season in series_info['episodes']:
-        try:
-            for episode in series_info['episodes'][season]:
-                PrintLog(episode, "ERROR")
-                episode_id = episode['id']
-                episode_num = str(episode['episode_num']).zfill(2)
-                season_num = str(episode['season']).zfill(2)
-                strm_file_name = f"{series_name} S{season_num}E{episode_num}.strm"
-                strm_content = f"{base_url}/series/{username}/{password}/{episode_id}.mkv"
-
-                # Ensure series directory exists
-                series_dir_path = os.path.join(series_dir, series_name)
-                os.makedirs(series_dir_path, exist_ok=True)
-
-                # Determine path for .strm file
-                strm_file_path = os.path.join(series_dir_path, strm_file_name)
-
-                # Check if .strm file exists and the overwrite setting
-                if not os.path.exists(strm_file_path) or overwrite_series == 1:
-                    PrintLog(f"Adding new file: {strm_file_path}", "INFO")
-                    with open(strm_file_path, 'w') as strm_file:
-                        strm_file.write(strm_content)
-                    #else:
-                        #print(f"Skipping existing file without overwrite: {strm_file_path}")
-        except Exception as inner_error:
-            PrintLog(f"Error processing episodes for series '{series_name}' with ID {series_id}: {inner_error}", "WARNING")
-
 @main_bp.route('/add_series_to_server', methods=['POST'])
 def add_series_to_server():
     data = request.get_json()
@@ -958,6 +895,7 @@ def remove_wanted_serie():
 
 def find_wanted_series(series_dir):
     wanted_series = get_config_variable(CONFIG_PATH, 'wanted_series')
+    found_match = False
     if wanted_series == None:
         wanted_series = []
 
@@ -978,12 +916,14 @@ def find_wanted_series(series_dir):
         matches = [serie for serie in series_list if wanted.lower() in serie['name'].lower()]
         for serie in matches:
             DownloadSeries(serie['series_id'])
-
+            found_match = True
+    if found_match == True:
         wanted_series.remove(wanted)
     update_config_array(CONFIG_PATH, 'wanted_series', wanted_series)
 
 def find_wanted_movies(movies_dir):
     wanted_movies = get_config_variable(CONFIG_PATH, 'wanted_movies')
+    found_match = False
     if wanted_movies == None:
         wanted_movies = []
 
@@ -1013,7 +953,10 @@ def find_wanted_movies(movies_dir):
             with open(strm_file_path, 'w') as strm_file:
                 strm_file.write(strm_content)
             PrintLog(f"Created .strm file for {movie['name']}", "NOTICE")
-        wanted_movies.remove(wanted)
+            found_match = True
+    if found_match == True:
+        wanted_series.remove(wanted)
+
     update_config_array(CONFIG_PATH, 'wanted_movies', wanted_movies)
 
 
@@ -1098,20 +1041,26 @@ def get_channels_for_selected_groups(selected_groups):
     PrintLog(f"Channels to be added: {all_channels}", "INFO")
     return all_channels
 
-
-
-
-
-
-
-
-
-def update_target_channel_names(new_channels):
+def update_target_channel_namesOLD(new_channels):
     existing_channel_names = get_config_variable(CONFIG_PATH, 'target_channel_names')
 
     # Combine existing channels with new channels, ensuring uniqueness
     updated_channel_names = list(set(existing_channel_names + new_channels))
     PrintLog(f"updated channels: ", updated_channel_names)
+
+    update_config_array(CONFIG_PATH, 'target_channel_names', updated_channel_names)
+
+    return True
+
+def update_target_channel_names(new_channels):
+    existing_channel_names = get_config_variable(CONFIG_PATH, 'target_channel_names')
+
+    # Filter out duplicates from new_channels that are already in existing_channel_names
+    unique_new_channels = [channel for channel in new_channels if channel not in existing_channel_names]
+
+    # Combine existing channels with unique new channels, maintaining the order
+    updated_channel_names = existing_channel_names + unique_new_channels
+    PrintLog("updated channels: ", updated_channel_names)
 
     update_config_array(CONFIG_PATH, 'target_channel_names', updated_channel_names)
 
@@ -1479,79 +1428,6 @@ def log():
         message = ansi_to_html_converter(message)        
         log_entries.append((metadata, message, css_class))
     
-    return render_template('log.html', log_entries=log_entries, current_page=page, total_pages=total_pages)
-
-@main_bp.route('/logOLD')
-def logOLD():
-    hide_webserver_logs = get_config_variable(CONFIG_PATH, 'hide_webserver_logs')
-    page = request.args.get('page', 1, type=int)
-    lines_per_page = 75
-    start_line = (page - 1) * lines_per_page
-    log_file = f'{BASE_DIR}/logs/M3Usort.log'
-
-    log_entries = []  # Will store tuples of (metadata, message, css_class)
-
-    try:
-        log_lines = ""
-        with open(log_file, 'r') as file:
-            log_lines = file.readlines()
-
-        total_pages = len(log_lines) // lines_per_page + (1 if len(log_lines) % lines_per_page > 0 else 0)
-        log_content = log_lines[-(start_line + lines_per_page):len(log_lines) - start_line][::-1]
-    except Exception as e:
-        log_content = [f"Error reading log file: {e}"]
-        total_pages = 1
-
-    '''
-    try:
-        with open(log_file, 'r') as file:
-            log_lines = file.readlines()
-        total_pages = len(log_lines) // lines_per_page + (1 if len(log_lines) % lines_per_page > 0 else 0)
-        # Reverse the lines to start from the latest log entry
-        log_lines = log_lines[::-1]
-        filtered_lines = []
-        for line in log_lines:
-            if hide_webserver_logs == "1" and ('GET /' in line or 'POST /' in line):
-                continue  # Skip webserver access logs if the setting is enabled
-            filtered_lines.append(line)
-            if len(filtered_lines) == lines_per_page:  # Only keep up to the page limit
-                break
-        # Reverse the filtered_lines to have the most recent log entries first
-        #filtered_lines = filtered_lines[::-1]
-        log_content = filtered_lines[-(start_line + lines_per_page):len(filtered_lines) - start_line]
-    except Exception as e:
-        log_content = [f"Error reading log file: {e}"]
-        total_pages = 1
-    '''         
-
-
-    for line in log_content:
-        if hide_webserver_logs == "1" and ('GET /' in line or 'POST /' in line):
-            continue
-        parts = line.split(' ', 3)  # Split at the third space character
-        if len(parts) >= 4:
-            metadata, message = parts[0] + ' ' + parts[1] + ' ' + parts[2], parts[3]
-        else:
-            metadata, message = line, ''
-
-        if 'DEBUG' in metadata:
-            css_class = 'log-debug'
-        elif 'INFO' in metadata:
-            css_class = 'log-info'
-        elif 'WARNING' in metadata:
-            css_class = 'log-warning'
-        elif 'ERROR' in metadata:
-            css_class = 'log-error'
-        elif 'CRITICAL' in metadata:
-            css_class = 'log-critical'
-        else:
-            css_class = ''
-
-        message = ansi_to_html_converter(message)
-
-        
-        log_entries.append((metadata, message, css_class))
-
     return render_template('log.html', log_entries=log_entries, current_page=page, total_pages=total_pages)
 
 def extract_credentials_from_url(m3u_url):

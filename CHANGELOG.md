@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.18
+- some code cleanup
+- changed layyout of Home
+- When adding a channel group to the custom channel it won't screw up the current order of that custom channel
+- Fixed a but with the new watchlist where the wanted VOD was removed when no match found
+
 ## 0.1.17
 - Added option to add future release movies and series to a watchlist.
 

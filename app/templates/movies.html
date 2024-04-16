@@ -74,20 +74,20 @@
             },
             body: JSON.stringify({ movieName, movieId }),
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data); // Output the response from the server
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Output the response from the server
 
-            var flashMessagesContainer = document.getElementById('flash-messages-container');
-            var flashMessageDiv = document.createElement('div');
-            flashMessageDiv.textContent = data.message;
-            flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
-            flashMessagesContainer.appendChild(flashMessageDiv);
+                var flashMessagesContainer = document.getElementById('flash-messages-container');
+                var flashMessageDiv = document.createElement('div');
+                flashMessageDiv.textContent = data.message;
+                flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
+                flashMessagesContainer.appendChild(flashMessageDiv);
 
-            // Hide the newly created flash message after delay
-            hideFlashMessagesAfterDelay();
-        })
-        .catch(error => console.error('Error:', error));
+                // Hide the newly created flash message after delay
+                hideFlashMessagesAfterDelay();
+            })
+            .catch(error => console.error('Error:', error));
     }
 
     function RemoveWantedMovie(movieName) {
@@ -98,21 +98,21 @@
             },
             body: JSON.stringify({ movieName }),
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data); // Output the response from the server
-            location.reload();
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Output the response from the server
+                location.reload();
 
-            var flashMessagesContainer = document.getElementById('flash-messages-container');
-            var flashMessageDiv = document.createElement('div');
-            flashMessageDiv.textContent = data.message;
-            flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
-            flashMessagesContainer.appendChild(flashMessageDiv);
+                var flashMessagesContainer = document.getElementById('flash-messages-container');
+                var flashMessageDiv = document.createElement('div');
+                flashMessageDiv.textContent = data.message;
+                flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
+                flashMessagesContainer.appendChild(flashMessageDiv);
 
-            // Hide the newly created flash message after delay
-            hideFlashMessagesAfterDelay();
-        })
-        .catch(error => console.error('Error:', error));
+                // Hide the newly created flash message after delay
+                hideFlashMessagesAfterDelay();
+            })
+            .catch(error => console.error('Error:', error));
     }
 
     document.addEventListener('DOMContentLoaded', function () {
