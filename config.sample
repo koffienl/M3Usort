@@ -15,6 +15,7 @@ scan_interval = "10"
 SECRET_KEY = "ChangeMe!"
 debug = "no"
 hide_webserver_logs = "1"
+match_type = "1"
 
 
 # List of channel groups to whitelist

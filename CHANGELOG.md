@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.21
+- BREAKING: Please run `pip install fuzzywuzzy python-Levenshtein` before installing this version 
+- Some changes in the display of the modal (cover images for movies and series)
+- Added option to do fuzzywuzzy search when matching movies/series with the watchlists (experimental). You can change this in the settings page.
+
+
+
 ## 0.1.20
 - Some HTML cleanup
 - Added processing of watchlist at manual start of download VOD
@@ -54,7 +61,7 @@
 - When adding a setting not present in the current config, it is added to the config
 
 ## 0.1.8
-- BREAKING: Please `run pip install packaging` before installing this version
+- BREAKING: Please run `pip install packaging` before installing this version
 - updated README
 - small change in service file
 - small change in config.sample

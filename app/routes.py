@@ -25,6 +25,10 @@ import hashlib
 import difflib
 import shutil
 
+from fuzzywuzzy import process, fuzz
+
+
+
 
 
 logging.getLogger('ipytv').setLevel(logging.WARNING)
@@ -39,7 +43,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.20'
+VERSION = '0.1.21'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -84,28 +88,19 @@ def restart():
     if request.method == 'POST':
         try:
             subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            return "OK"
+            #return "OK"
+            return json
         except subprocess.CalledProcessError:
             try:
                 subprocess.run(['sudo'] + command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                return "OK"
+                #return "OK"
+                return json
             except subprocess.CalledProcessError as e:
                 # If both attempts fail, log and return an error
                 PrintLog(f"Error restarting service: {e}", "ERROR")
                 return "Error restarting the service", 500
     else:
         return "Not allowed", 500
-
-
-    #if request.method == 'POST':
-    try:
-        subprocess.run(['systemctl', 'restart', 'M3Usort.service'], check=True)
-        #return redirect(url_for('index'))
-        return "OK"
-    except subprocess.CalledProcessError as e:
-        # Handle error here
-        PrintLog(f"Error restarting service: {e}", "ERROR")
-        return "Error restarting the service", 500
 
 @app.route('/healthcheck')
 def healthcheck():
@@ -584,7 +579,7 @@ def GetSeriesList():
     series_data = response.json()
 
     # Filter the needed data
-    series = [{'name': serie['name'], 'series_id': serie['series_id']} for serie in series_data]
+    series = [{'name': serie['name'], 'series_id': serie['series_id'], 'series_cover': serie['cover']} for serie in series_data]
 
     return series
 
@@ -643,18 +638,24 @@ def add_series_to_server():
     series_id = data['serieId']
     DownloadSeries(series_id)
 
-    return jsonify(message="Series added successfully"), 200
+    return jsonify(message="Series added successfully", type="succes"), 200
 
 @main_bp.route('/rebuild')
 def rebuildWeb():
     rebuild()
     # Redirect back to the referrer page, or to a default page if no referrer is set
+
+    json = json_flash("Rebuild finished", "success")
+    return json
+
+    '''
     referrer = request.referrer
     if referrer:
         return redirect(referrer)
     else:
         # Redirect to a default route if the referrer is not found
         return redirect(url_for('main_bp.home'))
+    '''
 
 def rebuild():
     original_m3u_path = f'{BASE_DIR}/files/original.m3u'
@@ -711,12 +712,17 @@ def download():
     find_wanted_movies(movies_dir)
     '''
     scheduled_vod_download()
+    json = json_flash("Download finished", "success")
+    return json
 
+
+    '''
     referrer = request.referrer
     if referrer:
         return redirect(referrer)
     else:
         return redirect(url_for('main_bp.home'))
+    '''
 
 
 @app.route('/m3u/<path:filename>')
@@ -816,7 +822,7 @@ def movies():
     movies_data = response.json()
 
     # Filter the needed data
-    movies = [{'name': movie['name'], 'stream_id': movie['stream_id']} for movie in movies_data]
+    movies = [{'name': movie['name'], 'stream_id': movie['stream_id'], 'stream_icon': movie['stream_icon']} for movie in movies_data]
 
     return render_template('movies.html', movies=movies, wanted_movies=wanted_movies)
 
@@ -874,7 +880,88 @@ def remove_wanted_serie():
     return '{ "result": "OK"} '
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def strip_year(movie_name):
+    # This function strips the year from the movie name using regular expression
+    # Returns the stripped movie name and the year if present
+    match = re.search(r'\(\d{4}\)$', movie_name)
+    if match:
+        # Return the title without the year and the year itself
+        return movie_name[:match.start()].strip(), int(match.group()[1:-1])
+    return movie_name, None
+
+def find_wanted_movies(movies_dir):
+    match_type = get_config_variable(CONFIG_PATH, 'match_type')
+    if match_type == "1" or match_type == None:
+        find_wanted_movies_string(movies_dir)
+    elif match_type == "2":
+        find_wanted_movies_fuzzy(movies_dir)
+
 def find_wanted_series(series_dir):
+    match_type = get_config_variable(CONFIG_PATH, 'match_type')
+    if match_type == "1" or match_type == None:
+        find_wanted_series_string(series_dir)
+    elif match_type == "2":
+        find_wanted_series_fuzzy(series_dir)
+
+
+def find_wanted_series_fuzzy(series_dir):
+    wanted_series = get_config_variable(CONFIG_PATH, 'wanted_series')
+    overwrite_series = int(get_config_variable(CONFIG_PATH, 'overwrite_series'))
+    current_year = datetime.now().year
+    similarity_threshold = 75
+
+    if wanted_series is None:
+        wanted_series = []
+
+    m3u_url = get_config_variable(CONFIG_PATH, 'url')
+    username, password = extract_credentials_from_url(m3u_url)
+    parsed_url = urlparse(m3u_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    series_list = GetSeriesList()
+
+    for wanted in wanted_series.copy():
+        PrintLog(f"Searching for wanted serie '{wanted}' (method: fuzzywuzzy)", "INFO")
+        best_match = None
+        highest_similarity = 0
+        most_recent_year = 0
+
+        for serie in series_list:
+            serie_name_stripped, year = strip_year(serie['name'])
+            similarity = fuzz.token_set_ratio(wanted, serie_name_stripped)
+
+            if similarity >= similarity_threshold:
+                is_new_best = (similarity > highest_similarity or
+                               (similarity == highest_similarity and year and year > most_recent_year))
+
+                if is_new_best and (year is None or year <= current_year):
+                    best_match = serie
+                    highest_similarity = similarity
+                    most_recent_year = year if year else most_recent_year
+
+        if best_match:
+            DownloadSeries(best_match['series_id'])
+        else:
+            PrintLog("No match found", "WARNING")
+
+    update_config_array(CONFIG_PATH, 'wanted_series', wanted_series)
+
+
+def find_wanted_series_string(series_dir):
     wanted_series = get_config_variable(CONFIG_PATH, 'wanted_series')
     found_match = False
     if wanted_series == None:
@@ -892,7 +979,7 @@ def find_wanted_series(series_dir):
 
     # Check each wanted serie against the series list
     for wanted in wanted_series.copy():
-        PrintLog(f"Searching for wanted serie '{wanted}'", "NOTICE")
+        PrintLog(f"Searching for wanted serie '{wanted}' (method: string)", "NOTICE")
         # Find all series where the wanted serie title is a substring of the serie's name
         matches = [serie for serie in series_list if wanted.lower() in serie['name'].lower()]
         for serie in matches:
@@ -902,8 +989,71 @@ def find_wanted_series(series_dir):
         wanted_series.remove(wanted)
     update_config_array(CONFIG_PATH, 'wanted_series', wanted_series)
 
-def find_wanted_movies(movies_dir):
+def find_wanted_movies_fuzzy(movies_dir):
     wanted_movies = get_config_variable(CONFIG_PATH, 'wanted_movies')
+    overwrite_movies = int(get_config_variable(CONFIG_PATH, 'overwrite_movies'))
+    current_year = datetime.now().year
+    similarity_threshold = 75
+
+    if wanted_movies is None:
+        wanted_movies = []
+
+    m3u_url = get_config_variable(CONFIG_PATH, 'url')
+    username, password = extract_credentials_from_url(m3u_url)
+    parsed_url = urlparse(m3u_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    
+    movies_list = GetMoviesList()
+
+    for wanted in wanted_movies.copy():
+        PrintLog(f"Searching for wanted movie '{wanted}' (method: fuzzywuzzy)", "INFO")
+        best_match = None
+        highest_similarity = 0
+        most_recent_year = 0
+
+        for movie in movies_list:
+            movie_name_stripped, year = strip_year(movie['name'])
+            similarity = fuzz.token_set_ratio(wanted, movie_name_stripped)
+
+            if similarity >= similarity_threshold:
+                # Check for a new best match
+                is_new_best = (similarity > highest_similarity or
+                               (similarity == highest_similarity and year and year > most_recent_year))
+
+                #if is_new_best:
+                #    PrintLog(f"optie? {movie_name_stripped} - similarity:{similarity}", "NOTICE")
+
+                if is_new_best and (year is None or year <= current_year):
+                    best_match = movie
+                    highest_similarity = similarity
+                    most_recent_year = year if year else most_recent_year
+
+        if best_match:
+            # PrintLog(f"Winnaar: {best_match}", "NOTICE")
+            movie_dir_path = os.path.join(movies_dir, best_match['name'])
+            # Check if directory exists and handle based on overwrite_movies flag
+            if not os.path.exists(movie_dir_path) or overwrite_movies == 1:
+                os.makedirs(movie_dir_path, exist_ok=True)
+                strm_file_path = os.path.join(movie_dir_path, f"{best_match['name']}.strm")
+                strm_content = f"{base_url}/movie/{username}/{password}/{best_match['stream_id']}.mkv"
+                
+                with open(strm_file_path, 'w') as strm_file:
+                    strm_file.write(strm_content)
+                PrintLog(f"Created .strm file for {best_match['name']}", "NOTICE")
+                wanted_movies.remove(wanted)
+            else:
+                PrintLog("No match found", "WARNING")
+                #PrintLog(f"Match found but not overwritten for {best_match['name']}", "INFO")
+        else:
+            PrintLog("No match found", "WARNING")
+
+
+
+    update_config_array(CONFIG_PATH, 'wanted_movies', wanted_movies)
+
+def find_wanted_movies_string(movies_dir):
+    wanted_movies = get_config_variable(CONFIG_PATH, 'wanted_movies')
+    overwrite_movies = int(get_config_variable(CONFIG_PATH, 'overwrite_movies'))
     found_match = False
     if wanted_movies == None:
         wanted_movies = []
@@ -920,12 +1070,17 @@ def find_wanted_movies(movies_dir):
 
     # Check each wanted movie against the movies list
     for wanted in wanted_movies.copy():
-        PrintLog(f"Searching for wanted movie '{wanted}'", "NOTICE")
-        # Find all movies where the wanted movie title is a substring of the movie's name
+        PrintLog(f"Searching for wanted movie '{wanted}' (method: string)", "NOTICE")
         matches = [movie for movie in movies_list if wanted.lower() in movie['name'].lower()]
+        found_match = False
         for movie in matches:
-            # Prepare the directory and .strm file
             movie_dir_path = os.path.join(movies_dir, movie['name'])
+            # Check if the directory exists and overwrite is not allowed
+            if os.path.exists(movie_dir_path) and overwrite_movies != 1:
+                PrintLog(f"Skipping '{movie['name']}' as it already exists and overwrite is not allowed", "WARNING")
+                continue
+
+            # Prepare the directory and .strm file
             os.makedirs(movie_dir_path, exist_ok=True)
             strm_file_path = os.path.join(movie_dir_path, f"{movie['name']}.strm")
             strm_content = f"{base_url}/movie/{username}/{password}/{movie['stream_id']}.mkv"
@@ -935,8 +1090,12 @@ def find_wanted_movies(movies_dir):
                 strm_file.write(strm_content)
             PrintLog(f"Created .strm file for {movie['name']}", "NOTICE")
             found_match = True
-    if found_match == True:
-        wanted_series.remove(wanted)
+
+        if found_match:
+            wanted_movies.remove(wanted)
+        else:
+            PrintLog(f"No match found for '{wanted}'", "NOTICE")
+
 
     update_config_array(CONFIG_PATH, 'wanted_movies', wanted_movies)
 
@@ -1086,6 +1245,7 @@ def settings():
         update_config_variable(CONFIG_PATH, 'overwrite_series', form.overwrite_series.data)
         update_config_variable(CONFIG_PATH, 'overwrite_movies', form.overwrite_movies.data)
         update_config_variable(CONFIG_PATH, 'hide_webserver_logs', form.hide_webserver_logs.data)
+        update_config_variable(CONFIG_PATH, 'match_type', form.match_type.data)
 
 
         # Reschedule 'M3U Download scheduler'
@@ -1134,6 +1294,7 @@ def settings():
         form.overwrite_series.data = get_config_variable(CONFIG_PATH, 'overwrite_series')
         form.overwrite_movies.data = get_config_variable(CONFIG_PATH, 'overwrite_movies')
         form.hide_webserver_logs.data = get_config_variable(CONFIG_PATH, 'hide_webserver_logs')
+        form.match_type.data = get_config_variable(CONFIG_PATH, 'match_type')
 
     return render_template('settings.html', form=form)
 
@@ -1225,67 +1386,7 @@ def save_reordered_groups():
     app.logger.debug(f"New order from the form: {new_order}")  # Log for debugging
     update_config_array(CONFIG_PATH, 'desired_group_titles', new_order)
 
-    '''
-    try:
-        # Read the existing configuration file
-        with open(CONFIG_PATH, 'r') as file:
-            lines = file.readlines()
-
-        # Rewrite the configuration file with the updated group order
-        with open(CONFIG_PATH, 'w') as file:
-            in_desired_group_titles_section = False
-            for line in lines:
-                if line.strip().startswith('desired_group_titles = ['):
-                    file.write('desired_group_titles = [\n')
-                    for group in new_order:
-                        file.write(f'    "{group}",\n')
-                    file.write(']\n')
-                    in_desired_group_titles_section = True
-                elif in_desired_group_titles_section and line.strip() == ']':
-                    in_desired_group_titles_section = False
-                elif not in_desired_group_titles_section:
-                    file.write(line)
-
-        flash('Group order has been updated successfully!', 'success')
-    except Exception as e:
-        flash(f"An error occurred while saving group order: {e}", "danger")
-    '''
-
     return redirect(url_for('main_bp.reorder_groups'))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def save_selected_groups(selected_groups):
     start_marker = 'desired_group_titles = ['
@@ -1372,6 +1473,13 @@ def get_log_lines(page, lines_per_page, hide_webserver_logs):
     page_lines = all_lines[start_index:end_index]
     
     return page_lines, total_pages
+
+def json_flash(message, message_type):
+    data = {
+        "message": message,
+        "type": message_type
+    }
+    return json.dumps(data)
 
 @main_bp.route('/log')
 def log():
@@ -1482,7 +1590,11 @@ def startup_delayed():
                         scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', minutes=scan_interval)
                     else:
                         scheduler.add_job(id='VOD scheduler', func=scheduled_vod_download, trigger='interval', hours=scan_interval)
-                scheduler.add_job(id='System tasks scheduler', func=scheduled_system_tasks, trigger='interval', hours=1)                
+                scheduler.add_job(id='System tasks scheduler', func=scheduled_system_tasks, trigger='interval', hours=1)
+
+                match_type = get_config_variable(CONFIG_PATH, 'match_type')
+                PrintLog(f"match type is {match_type}", "NOTICE")
+
                 break
 
         except requests.exceptions.RequestException as e:
@@ -1661,6 +1773,8 @@ def update():
             print(f"Failed to execute git pull: {e}")
     else:
         return "Not supported", 500
+
+    return "OK"
 
 def running_as_service():
     service_name = "M3Usort.service"

@@ -14,8 +14,9 @@
                 </div>
                 <ul id="movies-list">
                     {% for movie in movies %}
-                    <li><a href="javascript:void(0)" class="movie-link" data-movie-name="{{ movie.name }}"
-                            data-movie-id="{{ movie.stream_id }}">{{ movie.name }}</a></li>
+                    <li><a href="#" class="movie-link" data-movie-name="{{ movie.name }}"
+                            data-movie-id="{{ movie.stream_id }}" data-movie-icon="{{ movie.stream_icon }}">{{
+                            movie.name }}</a></li>
                     {% endfor %}
                 </ul>
             </div>
@@ -43,7 +44,9 @@
     </div>
 </div>
 
-<!-- The Modal -->
+<div id="player"></div>
+
+<!-- The Modal 
 <div id="myModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
@@ -53,15 +56,37 @@
     </div>
 </div>
 
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="modal-body">
+            <div id="modal-image">
+            </div>
+            <div class="modal-text-buttons">
+                <p id="modal-text">Are you sure you want to add this movie?</p>
+                <div class="button-container">
+                    <button class="button-primary" id="confirmBtn">Yes</button>
+                    <button id="cancelBtn">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+-->
+
+
 <script>
     // Function to hide flash messages
     function hideFlashMessagesAfterDelay() {
         const flashMessages = document.querySelectorAll('.flash-message');
         flashMessages.forEach(flashMessage => {
-            setTimeout(() => {
-                flashMessage.style.opacity = '0';
-                setTimeout(() => flashMessage.remove(), 600); // Wait for opacity transition, then remove
-            }, 5000); // Hide after 5 seconds (5000ms)
+            // Check if the flashMessage does NOT have the 'no-hide' class
+            if (!flashMessage.classList.contains('static')) {
+                setTimeout(() => {
+                    flashMessage.style.opacity = '0';
+                    setTimeout(() => flashMessage.remove(), 600); // Wait for opacity transition, then remove
+                }, 5000); // Hide after 5 seconds (5000ms)
+            }
         });
     }
 
@@ -117,6 +142,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById("myModal");
         const modalText = document.getElementById("modal-text");
+        const modalImage = document.getElementById("modal-image");
         const confirmBtn = document.getElementById("confirmBtn");
         const cancelBtn = document.getElementById("cancelBtn");
         const span = document.getElementsByClassName("close")[0];
@@ -127,11 +153,14 @@
             link.addEventListener('click', function () {
                 const movieName = this.getAttribute('data-movie-name');
                 const movieId = this.getAttribute('data-movie-id');
+                const movieIcon = this.getAttribute('data-movie-icon');
                 modalText.innerHTML = `Are you sure you want to add Movie '${movieName}'?`;
+                modalImage.innerHTML = `<a href="${movieIcon}" target="_blank"><img src="${movieIcon}"></a>`
                 modal.style.display = "block";
 
                 confirmBtn.onclick = function () {
                     console.log("Adding movie:", movieName, "ID:", movieId);
+                    modalImage.innerHTML = "";
                     modal.style.display = "none";
                     addMovieToServer(movieName, movieId);
                 };
@@ -142,6 +171,7 @@
             link.addEventListener('click', function () {
                 const movieName = this.getAttribute('data-movie-name');
                 modalText.innerHTML = `Are you sure you want to remove '${movieName}' from the wanted list?`;
+                modalImage.innerHTML = "?"
                 modal.style.display = "block";
 
                 confirmBtn.onclick = function () {
@@ -153,15 +183,18 @@
         });
 
         cancelBtn.onclick = function () {
+            modalImage.innerHTML = ``
             modal.style.display = "none";
         };
 
         span.onclick = function () {
+            modalImage.innerHTML = ``
             modal.style.display = "none";
         };
 
         window.onclick = function (event) {
             if (event.target == modal) {
+                modalImage.innerHTML = ``
                 modal.style.display = "none";
             }
         };

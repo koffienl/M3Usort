@@ -14,5 +14,6 @@ class ConfigForm(FlaskForm):
     overwrite_series = SelectField('Overwrite existing episodes', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
     overwrite_movies = SelectField ('Overwrite existing movies', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
     hide_webserver_logs = SelectField('Hide webserver logs', choices=[('1', 'Yes'), ('0', 'No')], validators=[DataRequired()])
+    match_type = SelectField('Matching method', choices=[('1', 'String comparison'), ('2', 'Fuzzywuzzy')], validators=[DataRequired()])
     submit = SubmitField('Save')
 

@@ -1,9 +1,179 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById("myModal");
+    const modalText = document.getElementById("modal-text");
+    const modalImage = document.getElementById("modal-image");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const span = document.getElementsByClassName("close")[0];
+
     var rebuildLink = document.getElementById('rebuild-link');
     var downloadLink = document.getElementById('download-link');
-    var flashMessagesContainer = document.getElementById('flash-messages-container');
+    var restartLink = document.getElementById('restart-link');
+    var updateLink = document.getElementById('update-link');
+    //var flashMessagesContainer = document.getElementById('flash-messages-container');
 
-    // Function to hide flash messages
+    hideFlashMessagesAfterDelay();
+
+    if (rebuildLink) {
+        rebuildLink.addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent the default link action
+
+
+            const obj = {
+                message: "Rebuild process started. Please wait for completion.",
+                type: "info",
+            };
+            const jsonString = JSON.stringify(obj);
+            createAndDisplayFlashMessage(obj, "FlashRebuild");
+
+            fetch('/rebuild', {
+                method: 'GET',
+                headers: {
+                }
+            })
+                .then(response => response.json())  // Convert the response to JSON
+                .then(data => {
+                    console.log("data")
+                    console.log(data)
+                    removeFlashMessageById('FlashRebuild');
+                    createAndDisplayFlashMessage(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    }
+
+    if (downloadLink) {
+        downloadLink.addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent the default link action
+
+
+            const obj = {
+                message: "Download process started. Please wait for completion.",
+                type: "info",
+            };
+            const jsonString = JSON.stringify(obj);
+            createAndDisplayFlashMessage(obj, "FlashDownload");
+
+            fetch('/download', {
+                method: 'GET',
+                headers: {
+                }
+            })
+                .then(response => response.json())  // Convert the response to JSON
+                .then(data => {
+                    console.log("data")
+                    console.log(data)
+                    removeFlashMessageById('FlashDownload');
+                    createAndDisplayFlashMessage(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    }
+
+    if (restartLink) {
+        restartLink.addEventListener('click', function () {
+            event.preventDefault(); // Prevent the default link action
+
+            modalText.innerHTML = `Are you sure you want to restart the server?`;
+            modalImage.innerHTML = "?"
+            modal.style.display = "block";
+
+            confirmBtn.onclick = function () {
+                modal.style.display = "none";
+
+                const obj = {
+                    message: "Restart process started. Please wait for completion.",
+                    type: "info",
+                };
+                const jsonString = JSON.stringify(obj);
+                createAndDisplayFlashMessage(obj, "FlashRestart");
+
+                fetch('/restart', {
+                    method: 'POST'
+                })
+                sleepAndRefresh()
+            };
+        });
+    }
+
+    if (updateLink) {
+        updateLink.addEventListener('click', function () {
+            event.preventDefault(); // Prevent the default link action
+
+            modalText.innerHTML = `Are you sure you want to update the server?`;
+            modal.style.display = "block";
+
+            confirmBtn.onclick = function () {
+                modal.style.display = "none";
+
+                const obj = {
+                    message: "Update process started. Please wait for completion.",
+                    type: "info",
+                };
+                const jsonString = JSON.stringify(obj);
+                createAndDisplayFlashMessage(obj, "FlashUpdate");
+
+                fetch('/update', {
+                    method: 'POST'
+                })
+                sleepAndRefresh()
+            };
+        });
+    }
+
+    cancelBtn.onclick = function () {
+        modal.style.display = "none";
+    };
+
+    span.onclick = function () {
+        modal.style.display = "none";
+    };
+
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    };
+
+    function createAndDisplayFlashMessage(data, messageId) {
+        var flashMessagesContainer = document.getElementById('flash-messages-container');
+
+        // Create and append the client-side flash message
+        var flashMessageDiv = document.createElement('div');
+        if (messageId) {  // Check if an ID was provided
+            flashMessageDiv.id = messageId;  // Set the unique ID for the flash message
+        }
+        flashMessageDiv.textContent = data.message;  // Using dynamic message
+        flashMessageDiv.className = 'flash-message ' + data.type;  // Dynamic class based on type
+        flashMessagesContainer.appendChild(flashMessageDiv);
+
+        setTimeout(() => {
+            flashMessageDiv.remove();
+        }, 5000);
+    }
+
+    function sleepAndRefresh() {
+        // Delay execution for 2000 milliseconds (2 seconds)
+        setTimeout(function () {
+            // Refresh the current page
+            window.location.reload();
+        }, 2000);
+    }
+
+    function removeFlashMessageById(messageId) {
+        const messageElement = document.getElementById(messageId);
+        if (messageElement) {
+            messageElement.remove();
+            console.log("Flash message removed:", messageId);
+        } else {
+            console.log("No flash message found with ID:", messageId);
+        }
+    }
+
     function hideFlashMessagesAfterDelay() {
         const flashMessages = document.querySelectorAll('.flash-message');
         flashMessages.forEach(flashMessage => {
@@ -16,149 +186,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-
-    // Hide existing server-side flash messages after delay
-    hideFlashMessagesAfterDelay();
-
-    if (rebuildLink) {
-        rebuildLink.addEventListener('click', function(event) {
-            event.preventDefault(); // Prevent the default link action
-
-            // Create and append the client-side flash message
-            var flashMessageDiv = document.createElement('div');
-            flashMessageDiv.textContent = 'Rebuild process started. Please wait for completion.';
-            flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
-            flashMessagesContainer.appendChild(flashMessageDiv);
-
-            // Hide the newly created flash message after delay
-            hideFlashMessagesAfterDelay();
-
-
-            // Redirect to the rebuild page after a short delay
-            setTimeout(function() {
-                window.location.href = '/rebuild'; // Adjust the URL as needed
-            }, 200); // 2 seconds delay
-
-        });
-    }
-
-    if (downloadLink) {
-        downloadLink.addEventListener('click', function(event) {
-            event.preventDefault(); // Prevent the default link action
-
-            // Create and append the client-side flash message
-            var flashMessageDiv = document.createElement('div');
-            flashMessageDiv.textContent = 'Download process started. Please wait for completion.';
-            flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
-            flashMessagesContainer.appendChild(flashMessageDiv);
-
-            // Hide the newly created flash message after delay
-            hideFlashMessagesAfterDelay();
-
-
-            // Redirect to the rebuild page after a short delay
-            setTimeout(function() {
-                window.location.href = '/download'; // Adjust the URL as needed
-            }, 200); // 2 seconds delay
-
-        });
-    }
-
-
-
-
-    const modal = document.getElementById("myModal");
-    const modalText = document.getElementById("modal-text");
-    const confirmBtn = document.getElementById("confirmBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const span = document.getElementsByClassName("close")[0];
-    const restartlink = document.querySelectorAll('.restart-link');
-    const updatelink = document.querySelectorAll('.update-link');
-
-    restartlink.forEach(link => {
-        link.addEventListener('click', function() {
-            modalText.innerHTML = `Are you sure you want to restart the server?`;
-            modal.style.display = "block";
-            
-            confirmBtn.onclick = function() {
-
-                var flashMessagesContainer = document.getElementById('flash-messages-container');
-
-
-                // Create and append the client-side flash message
-                var flashMessageDiv = document.createElement('div');
-                flashMessageDiv.textContent = "Restarting server ...";
-                flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
-                flashMessagesContainer.appendChild(flashMessageDiv);
-    
-                // Hide the newly created flash message after delay
-                hideFlashMessagesAfterDelay();
-
-
-                console.log("Restarting ...");
-                modal.style.display = "none";
-                fetch('/restart', {
-                    method: 'POST',
-                    headers: {
-                    }
-                })
-                // Call function to handle adding the movie
-            };
-        });
-    });
-
-
-    updatelink.forEach(link => {
-        link.addEventListener('click', function() {
-            modalText.innerHTML = `Are you sure you want to update the server?`;
-            modal.style.display = "block";
-            
-            confirmBtn.onclick = function() {
-
-                var flashMessagesContainer = document.getElementById('flash-messages-container');
-
-
-                // Create and append the client-side flash message
-                var flashMessageDiv = document.createElement('div');
-                flashMessageDiv.textContent = "Updating server ...";
-                flashMessageDiv.className = 'flash-message info'; // Adjust class name as needed
-                flashMessagesContainer.appendChild(flashMessageDiv);
-    
-                // Hide the newly created flash message after delay
-                hideFlashMessagesAfterDelay();
-
-
-                console.log("Updating ...");
-                modal.style.display = "none";
-                fetch('/update', {
-                    method: 'POST',
-                    headers: {
-                    }
-                })
-            
-
-                // Call function to handle adding the movie
-            };
-        });
-    });
-
-
-    cancelBtn.onclick = function() {
-        modal.style.display = "none";
-    };
-
-    span.onclick = function() {
-        modal.style.display = "none";
-    };
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    };
-
-
-
-
 });

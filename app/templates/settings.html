@@ -59,7 +59,6 @@
                         {{ form.overwrite_series(class_="u-full-width") }}
                     </div>
                 </div>
-                <hr>
 
                 <div class="row">
                     <div class="six columns">
@@ -69,6 +68,12 @@
                     <div class="six columns">
                         <label for="OverwriteMovies">{{ form.overwrite_movies.label }}</label>
                         {{ form.overwrite_movies(class_="u-full-width") }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="six columns">
+                        <label for="moviesDir">{{ form.match_type.label }}</label>
+                        {{ form.match_type(class_="u-full-width") }}
                     </div>
                 </div>
 
