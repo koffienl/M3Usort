@@ -43,7 +43,7 @@ scheduler.start()
 
 
 # Global variables
-VERSION = '0.1.21'
+VERSION = '0.1.22'
 UPDATE_AVAILABLE = 0
 UPDATE_VERSION = ""
 GROUPS_CACHE = {'groups': [], 'last_updated': None}
@@ -1779,6 +1779,12 @@ def update():
 def running_as_service():
     service_name = "M3Usort.service"
     global RUNNING_AS_SERVICE
+
+    # Skip check when running inside Docker
+    if os.environ.get("IN_DOCKER"):
+        RUNNING_AS_SERVICE = 0
+        return
+    
     try:
         result = subprocess.run(['systemctl', 'is-active', service_name],
                                 stdout=subprocess.PIPE, 
