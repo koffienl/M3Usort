@@ -1,19 +1,19 @@
-Dockerfile
+FROM debian:bookworm
 
-docker stop M3Usort
-docker rm M3Usort
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-docker rmi m3usort
-docker builder prune -a -f
-docker build -t m3usort .
+WORKDIR /app
 
-docker run --name M3Usort -d \
-  -e IN_DOCKER=true \
-  -p 6060:6060 \
-  -v /docker/m3udata/config.py:/data/M3Usort/config.py \
-  -v /docker/m3udata/logs:/data/M3Usort/logs/ \
-  -v /docker/m3udata/files:/data/M3Usort/files/ \
-  -v /docker/m3udata/Movies:/data/Movies/ \
-  -v /docker/m3udata/Series:/data/Series/ \  
-  m3usort
+COPY requirements.txt .
 
+RUN python3 -m venv /venv && \
+    /venv/bin/pip install --no-cache-dir -r requirements.txt
+
+COPY ./M3Usort/ /data/M3Usort
+
+CMD ["/venv/bin/python", "/data/M3Usort/run.py"]
