@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.22
+- Project wasn't working when dockerized
+
 ## 0.1.21
 - BREAKING: Please run `pip install fuzzywuzzy python-Levenshtein` before installing this version 
 - Some changes in the display of the modal (cover images for movies and series)
