@@ -1,0 +1,8 @@
+fuzzywuzzy
+python-Levenshtein
+Flask
+Flask-WTF
+flask_apscheduler
+requests
+m3u-ipytv
+packaging
